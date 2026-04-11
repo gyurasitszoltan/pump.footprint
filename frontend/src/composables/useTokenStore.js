@@ -120,7 +120,7 @@ export function useTokenStore() {
     selectedMint.value = mint
   }
 
-  const tokenList = computed(() => Array.from(tokens.values()))
+  const tokenList = computed(() => Array.from(tokens.values()).reverse())
 
   return {
     tokens,
