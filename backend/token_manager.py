@@ -101,9 +101,13 @@ class TokenManager:
         update["mint"] = mint
         return update
 
-    def get_token_summaries(self) -> list[dict]:
+    def get_token_summaries(self, include_expired: bool = True) -> list[dict]:
         now_ms = int(time.time() * 1000)
-        return [self._token_summary(s, now_ms) for s in self.active_tokens.values()]
+        return [
+            self._token_summary(s, now_ms)
+            for s in self.active_tokens.values()
+            if include_expired or not s.expired
+        ]
 
     def _token_summary(self, state: TokenState, now_ms: int | None = None) -> dict:
         if now_ms is None:

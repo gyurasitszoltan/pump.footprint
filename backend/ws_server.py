@@ -28,7 +28,7 @@ class WsServer:
             await asyncio.sleep(2)
             if not self.clients:
                 continue
-            for summary in self.token_manager.get_token_summaries():
+            for summary in self.token_manager.get_token_summaries(include_expired=False):
                 msg = orjson.dumps({"type": "token_summary_update", **summary})
                 await self._broadcast_all(msg)
 
