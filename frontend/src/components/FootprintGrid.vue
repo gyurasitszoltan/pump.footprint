@@ -76,7 +76,7 @@ const maxAbsBucketDelta = computed(() => {
 
 function fmtBuySell(stat) {
   if (stat.vol === 0) return ''
-  return `${fmtSol(stat.buy || 0)}|${fmtSol(stat.sell || 0)}`
+  return `<span style="color:#4ade80">${fmtSol(stat.buy || 0)}</span><span style="color:#666">|</span><span style="color:#f87171">${fmtSol(stat.sell || 0)}</span>`
 }
 
 function fmtBuyPct(stat) {
@@ -86,7 +86,7 @@ function fmtBuyPct(stat) {
 
 const statRows = [
   { label: 'Volume', key: 'vol', format: (v, s) => fmtSol(v), bgFn: 'volume', textColor: '#aaa' },
-  { label: 'B|S', key: '_buysell', format: (v, s) => fmtBuySell(s), bgFn: 'volume', textColor: '#aaa' },
+  { label: 'B|S', key: '_buysell', format: (v, s) => fmtBuySell(s), bgFn: 'volume', textColor: '#aaa', html: true },
   { label: 'Buy%', key: '_buypct', format: (v, s) => fmtBuyPct(s), bgFn: 'buypct', textColor: '#fff' },
   { label: 'Delta', key: 'delta', format: (v, s) => fmtSolSigned(v), bgFn: 'delta', textColor: '#fff' },
   { label: 'Trades', key: 'trades', format: (v, s) => v > 0 ? String(v) : '', bgFn: null, textColor: '#777' },
@@ -201,7 +201,8 @@ const stickyTopLeft = {
             borderRight: '1px solid #111',
             position: 'sticky', bottom: `${(statRows.length - 1 - ri) * 12 + SCROLLBAR_H}px`, zIndex: 1,
           }"
-        >{{ row.format(getStat(b)[row.key], getStat(b)) }}</td>
+          v-html="row.format(getStat(b)[row.key], getStat(b))"
+        />
       </tr>
     </tfoot>
   </table>
