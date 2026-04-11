@@ -84,13 +84,44 @@ function fmtBuyPct(stat) {
   return `${Math.round(((stat.buy || 0) / stat.vol) * 100)}%`
 }
 
-const statRows = [
-  { label: 'Volume', key: 'vol', format: (v, s) => fmtSol(v), bgFn: 'volume', textColor: '#aaa' },
-  { label: 'B|S', key: '_buysell', format: (v, s) => fmtBuySell(s), bgFn: 'volume', textColor: '#aaa', html: true },
-  { label: 'Buy%', key: '_buypct', format: (v, s) => fmtBuyPct(s), bgFn: 'buypct', textColor: '#fff' },
-  { label: 'Delta', key: 'delta', format: (v, s) => fmtSolSigned(v), bgFn: 'delta', textColor: '#fff' },
-  { label: 'Trades', key: 'trades', format: (v, s) => v > 0 ? String(v) : '', bgFn: null, textColor: '#777' },
-]
+function fmtSizeBin(stat, binIdx) {
+  const bins = stat.bins
+  if (!bins || !bins[binIdx]) return ''
+  const b = bins[binIdx]
+  if (b.buy === 0 && b.sell === 0) return ''
+  const buyStr = b.buy > 0 ? `<span style="color:#4ade80">${fmtSol(b.buy)}</span>` : '<span style="color:#555">0.0</span>'
+  const sellStr = b.sell > 0 ? `<span style="color:#f87171">${fmtSol(b.sell)}</span>` : '<span style="color:#555">0.0</span>'
+  return `${buyStr}<span style="color:#666">|</span>${sellStr}`
+}
+
+function sizeBinLabel(bins, idx) {
+  if (idx === 0) return `<${bins[0]}`
+  if (idx === bins.length) return `>${bins[bins.length - 1]}`
+  return `${bins[idx - 1]}-${bins[idx]}`
+}
+
+const statRows = computed(() => {
+  const bins = props.footprint.size_bins || [1, 2]
+  const numBins = bins.length + 1
+  const rows = [
+    { label: 'Volume', key: 'vol', format: (v, s) => fmtSol(v), bgFn: 'volume', textColor: '#aaa' },
+    { label: 'B|S', key: '_buysell', format: (v, s) => fmtBuySell(s), bgFn: 'volume', textColor: '#aaa', html: true },
+    { label: 'Buy%', key: '_buypct', format: (v, s) => fmtBuyPct(s), bgFn: 'buypct', textColor: '#fff' },
+    { label: 'Delta', key: 'delta', format: (v, s) => fmtSolSigned(v), bgFn: 'delta', textColor: '#fff' },
+    { label: 'Trades', key: 'trades', format: (v, s) => v > 0 ? String(v) : '', bgFn: null, textColor: '#777' },
+  ]
+  for (let i = 0; i < numBins; i++) {
+    rows.push({
+      label: sizeBinLabel(bins, i),
+      key: `_bin${i}`,
+      format: (v, s) => fmtSizeBin(s, i),
+      bgFn: null,
+      textColor: '#aaa',
+      html: true,
+    })
+  }
+  return rows
+})
 
 function statBg(row, stat) {
   if (row.bgFn === 'volume') return volumeBgColor(stat.vol, maxVol.value)

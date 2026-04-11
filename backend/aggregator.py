@@ -3,7 +3,7 @@ from __future__ import annotations
 from .const import (
     SOL_USD, MAX_DURATION_SEC, TIME_BUCKET_10S, NUM_BUCKETS_10S,
     NUM_BUCKETS_1S, MC_LEVEL_SIZE, INITIAL_MC_LOW, INITIAL_MC_HIGH,
-    IMBALANCE_RATIO, RSI_PERIOD,
+    IMBALANCE_RATIO, RSI_PERIOD, TRADE_SIZE_BINS,
 )
 from .footprint import CellData, BucketOHLC, BucketStats
 
@@ -95,6 +95,17 @@ class Aggregator:
         else:
             stats.sell_vol += sol_amount
             stats.delta -= sol_amount
+
+        # Trade size bins
+        num_bins = len(TRADE_SIZE_BINS) + 1
+        stats.ensure_bins(num_bins)
+        bin_idx = num_bins - 1  # default: largest bin
+        for i, threshold in enumerate(TRADE_SIZE_BINS):
+            if sol_amount < threshold:
+                bin_idx = i
+                break
+        side = "buy" if tx_type == "buy" else "sell"
+        stats.size_bins[bin_idx][side] += sol_amount
 
         # Compute imbalance for the updated cell + neighbors
         imbalance_updates = self._compute_imbalance_around(bucket_10s, mc_level)
@@ -237,6 +248,7 @@ class Aggregator:
             "rsi14": self.compute_rsi14(),
             "current_bucket": self.last_trade_bucket,
             "max_abs_delta": self._max_abs_delta(),
+            "size_bins": TRADE_SIZE_BINS,
         }
 
     def get_trades_last_bucket(self) -> int:

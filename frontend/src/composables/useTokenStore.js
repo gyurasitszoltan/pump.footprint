@@ -12,6 +12,7 @@ const footprint = reactive({
   rsi14: null,
   current_bucket: 0,
   max_abs_delta: 1,
+  size_bins: [1, 2],
 })
 
 export function useTokenStore() {
@@ -69,6 +70,7 @@ export function useTokenStore() {
     footprint.rsi14 = data.rsi14
     footprint.current_bucket = data.current_bucket
     footprint.max_abs_delta = data.max_abs_delta
+    footprint.size_bins = data.size_bins || [1, 2]
   }
 
   function handleFootprintUpdate(data) {
@@ -111,6 +113,7 @@ export function useTokenStore() {
     footprint.rsi14 = null
     footprint.current_bucket = 0
     footprint.max_abs_delta = 1
+    footprint.size_bins = [1, 2]
   }
 
   function selectToken(mint) {

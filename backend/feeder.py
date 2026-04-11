@@ -66,6 +66,8 @@ async def _handle_event(event: dict, token_manager: TokenManager, ws_server: WsS
             return
         if "solAmount" not in event or "marketCapSol" not in event:
             return
+        if abs(float(event["solAmount"])) < 0.01:
+            return
         update = token_manager.process_trade(event)
         if update:
             await ws_server.broadcast_footprint_update(update)
