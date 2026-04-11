@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 from .aggregator import Aggregator
 from .const import MAX_DURATION_SEC, SOL_USD
+from .persistence import save_token, load_all_expired
 
 if TYPE_CHECKING:
     from .ws_server import WsServer
@@ -24,6 +25,7 @@ class TokenState:
     pool: str
     aggregator: Aggregator
     cleanup_handle: asyncio.TimerHandle | None = None
+    expired: bool = False
 
 
 class TokenManager:
@@ -58,7 +60,7 @@ class TokenManager:
 
         loop = asyncio.get_event_loop()
         state.cleanup_handle = loop.call_later(
-            MAX_DURATION_SEC, lambda m=mint: asyncio.ensure_future(self._remove_token(m))
+            MAX_DURATION_SEC, lambda m=mint: asyncio.ensure_future(self._expire_token(m))
         )
 
         self.active_tokens[mint] = state
@@ -67,20 +69,21 @@ class TokenManager:
         if self._ws_server:
             asyncio.ensure_future(self._ws_server.broadcast_token_added(self._token_summary(state)))
 
-    async def _remove_token(self, mint: str):
-        state = self.active_tokens.pop(mint, None)
-        if state is None:
+    async def _expire_token(self, mint: str):
+        state = self.active_tokens.get(mint)
+        if state is None or state.expired:
             return
-        if state.cleanup_handle:
-            state.cleanup_handle.cancel()
-        log.info("Token removed: %s (%s)", mint[:12], state.symbol)
-        if self._ws_server:
-            await self._ws_server.broadcast_token_removed(mint)
+        state.expired = True
+        log.info("Token expired: %s (%s)", mint[:12], state.symbol)
+        try:
+            save_token(state)
+        except Exception:
+            log.exception("Failed to save expired token %s", mint[:12])
 
     def process_trade(self, event: dict) -> dict | None:
         mint = event["mint"]
         state = self.active_tokens.get(mint)
-        if state is None:
+        if state is None or state.expired:
             return None
 
         sol_amount = event.get("solAmount")
@@ -115,6 +118,7 @@ class TokenManager:
             "trades_10s": agg.get_trades_last_bucket(),
             "rsi14": agg.compute_rsi14(),
             "active_sec": round(active_sec, 0),
+            "expired": state.expired,
         }
 
     def get_footprint_snapshot(self, mint: str) -> dict | None:
@@ -127,4 +131,23 @@ class TokenManager:
         return snapshot
 
     def is_active(self, mint: str) -> bool:
-        return mint in self.active_tokens
+        state = self.active_tokens.get(mint)
+        return state is not None and not state.expired
+
+    def load_expired(self):
+        """Load previously saved expired tokens from disk."""
+        for data in load_all_expired():
+            mint = data["mint"]
+            if mint in self.active_tokens:
+                continue
+            agg = Aggregator.from_dict(data["migrate_ts_ms"], data["aggregator"])
+            state = TokenState(
+                mint=mint,
+                name=data.get("name", ""),
+                symbol=data.get("symbol", ""),
+                migrate_ts_ms=data["migrate_ts_ms"],
+                pool=data.get("pool", ""),
+                aggregator=agg,
+                expired=True,
+            )
+            self.active_tokens[mint] = state

@@ -22,6 +22,7 @@ log = logging.getLogger("server")
 
 async def main():
     token_manager = TokenManager()
+    token_manager.load_expired()
     ws_server = WsServer(token_manager)
     token_manager.set_ws_server(ws_server)
 

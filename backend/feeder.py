@@ -49,6 +49,10 @@ async def _handle_event(event: dict, token_manager: TokenManager, ws_server: WsS
     if tx_type is None:
         return
 
+    if tx_type == "create":
+        log.info("CREATE %s (%s) pool=%s", event.get("mint", "?")[:12], event.get("symbol", "?"), event.get("pool", "?"))
+        return
+
     if tx_type == "migrate":
         pool = event.get("pool", "")
         creator = event.get("poolCreatedBy", "")

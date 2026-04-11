@@ -22,6 +22,10 @@ class CellData:
             "delta": round(self.delta, 2),
         }
 
+    @classmethod
+    def from_dict(cls, d: dict) -> CellData:
+        return cls(buy_vol=d["buy"], sell_vol=d["sell"])
+
 
 @dataclass
 class BucketOHLC:
@@ -53,16 +57,31 @@ class BucketOHLC:
             "l": round(self.low_mc, 1),
         }
 
+    @classmethod
+    def from_dict(cls, d: dict) -> BucketOHLC:
+        return cls(open_mc=d["o"], close_mc=d["c"], high_mc=d["h"], low_mc=d["l"])
+
 
 @dataclass
 class BucketStats:
     volume: float = 0.0
+    buy_vol: float = 0.0
+    sell_vol: float = 0.0
     delta: float = 0.0
     trades: int = 0
 
     def to_dict(self) -> dict:
         return {
             "vol": round(self.volume, 2),
+            "buy": round(self.buy_vol, 2),
+            "sell": round(self.sell_vol, 2),
             "delta": round(self.delta, 2),
             "trades": self.trades,
         }
+
+    @classmethod
+    def from_dict(cls, d: dict) -> BucketStats:
+        return cls(
+            volume=d["vol"], buy_vol=d["buy"], sell_vol=d["sell"],
+            delta=d["delta"], trades=d["trades"],
+        )

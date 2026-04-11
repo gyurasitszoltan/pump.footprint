@@ -7,20 +7,27 @@ export function cellBgColor(delta, maxAbsDelta) {
     : `rgba(220,50,50,${alpha})`
 }
 
+// Blend rgba over #0d0d0d (13,13,13) to produce an opaque color
+function _blend(r, g, b, a) {
+  const br = 13, bg = 13, bb = 13
+  const out = (c, base) => Math.round(c * a + base * (1 - a))
+  return `rgb(${out(r, br)},${out(g, bg)},${out(b, bb)})`
+}
+
 export function deltaBgColor(delta, maxAbsDelta) {
   if (delta === 0 || maxAbsDelta === 0) return '#0d0d0d'
   const intensity = Math.min(Math.abs(delta) / maxAbsDelta, 1.0)
-  const alpha = (0.25 + 0.65 * intensity).toFixed(2)
+  const alpha = 0.25 + 0.65 * intensity
   return delta > 0
-    ? `rgba(0,180,80,${alpha})`
-    : `rgba(220,50,50,${alpha})`
+    ? _blend(0, 180, 80, alpha)
+    : _blend(220, 50, 50, alpha)
 }
 
 export function volumeBgColor(vol, maxVol) {
   if (vol === 0 || maxVol === 0) return '#1a1a1a'
   const intensity = Math.min(vol / maxVol, 1.0)
-  const alpha = (0.10 + 0.30 * intensity).toFixed(2)
-  return `rgba(100,100,180,${alpha})`
+  const alpha = 0.10 + 0.30 * intensity
+  return _blend(100, 100, 180, alpha)
 }
 
 export function rsiColor(rsi) {

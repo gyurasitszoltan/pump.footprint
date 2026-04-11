@@ -36,7 +36,7 @@ function copyMint() {
 <template>
   <tr
     class="cursor-pointer hover:bg-gray-800/50 transition-colors"
-    :class="selected ? 'bg-blue-900/30' : ''"
+    :class="[selected ? 'bg-blue-900/30' : '', token.expired ? 'opacity-50' : '']"
     @click="emit('select')"
   >
     <td class="px-2 py-1">

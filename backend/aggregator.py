@@ -90,8 +90,10 @@ class Aggregator:
         stats.volume += sol_amount
         stats.trades += 1
         if tx_type == "buy":
+            stats.buy_vol += sol_amount
             stats.delta += sol_amount
         else:
+            stats.sell_vol += sol_amount
             stats.delta -= sol_amount
 
         # Compute imbalance for the updated cell + neighbors
@@ -241,3 +243,37 @@ class Aggregator:
         """Trade count in the most recent active bucket."""
         stats = self.stats.get(self.last_trade_bucket)
         return stats.trades if stats else 0
+
+    def to_dict(self) -> dict:
+        """Serialize full aggregator state for persistence."""
+        cells = {f"{bi}:{ml}": c.to_dict() for (bi, ml), c in self.cells.items()}
+        ohlc = {str(bi): o.to_dict() for bi, o in self.ohlc.items()}
+        stats = {str(bi): s.to_dict() for bi, s in self.stats.items()}
+        return {
+            "close_1s": self.close_1s,
+            "cells": cells,
+            "ohlc": ohlc,
+            "stats": stats,
+            "mc_low": self.mc_low,
+            "mc_high": self.mc_high,
+            "last_mc_usd": self.last_mc_usd,
+            "last_trade_bucket": self.last_trade_bucket,
+        }
+
+    @classmethod
+    def from_dict(cls, migrate_ts_ms: int, d: dict) -> Aggregator:
+        """Restore aggregator from persisted dict."""
+        agg = cls(migrate_ts_ms)
+        agg.close_1s = d["close_1s"]
+        for key, cd in d["cells"].items():
+            bi, ml = key.split(":")
+            agg.cells[(int(bi), int(ml))] = CellData.from_dict(cd)
+        for bi_str, od in d["ohlc"].items():
+            agg.ohlc[int(bi_str)] = BucketOHLC.from_dict(od)
+        for bi_str, sd in d["stats"].items():
+            agg.stats[int(bi_str)] = BucketStats.from_dict(sd)
+        agg.mc_low = d["mc_low"]
+        agg.mc_high = d["mc_high"]
+        agg.last_mc_usd = d["last_mc_usd"]
+        agg.last_trade_bucket = d["last_trade_bucket"]
+        return agg
