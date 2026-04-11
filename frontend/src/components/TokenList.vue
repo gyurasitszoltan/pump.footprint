@@ -1,0 +1,38 @@
+<script setup>
+import TokenRow from './TokenRow.vue'
+
+defineProps({
+  tokens: { type: Array, default: () => [] },
+  selectedMint: { type: String, default: null },
+})
+
+const emit = defineEmits(['select'])
+</script>
+
+<template>
+  <div class="border border-gray-800 rounded mb-2">
+    <table class="w-full text-xs">
+      <thead>
+        <tr class="text-gray-500 border-b border-gray-800">
+          <th class="text-left px-2 py-1 font-normal">Token</th>
+          <th class="text-right px-2 py-1 font-normal w-16">Time</th>
+          <th class="text-right px-2 py-1 font-normal w-16">Trades</th>
+          <th class="text-right px-2 py-1 font-normal w-20">MCap</th>
+          <th class="text-right px-2 py-1 font-normal w-14">RSI</th>
+        </tr>
+      </thead>
+      <tbody>
+        <TokenRow
+          v-for="token in tokens"
+          :key="token.mint"
+          :token="token"
+          :selected="token.mint === selectedMint"
+          @select="emit('select', token.mint)"
+        />
+      </tbody>
+    </table>
+    <div v-if="tokens.length === 0" class="text-gray-600 text-xs text-center py-3">
+      Waiting for token migrations...
+    </div>
+  </div>
+</template>
