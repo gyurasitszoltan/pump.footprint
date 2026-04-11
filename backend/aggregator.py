@@ -30,8 +30,12 @@ class Aggregator:
         self.last_mc_usd: float = 0.0
         self.last_trade_bucket: int = 0
 
+        # Unique wallet tracking
+        self.seen_wallets: set[str] = set()
+
     def process_trade(self, tx_type: str, sol_amount: float,
-                      market_cap_sol: float, timestamp: int) -> dict:
+                      market_cap_sol: float, timestamp: int,
+                      tx_signer: str = "") -> dict:
         """Process a single trade event. Returns update info dict."""
         rel_ms = timestamp - self.migrate_ts_ms
         rel_sec = rel_ms / 1000.0
@@ -95,6 +99,11 @@ class Aggregator:
         else:
             stats.sell_vol += sol_amount
             stats.delta -= sol_amount
+
+        # New wallet tracking
+        if tx_signer and tx_signer not in self.seen_wallets:
+            self.seen_wallets.add(tx_signer)
+            stats.new_wallets += 1
 
         # Trade size bins
         num_bins = len(TRADE_SIZE_BINS) + 1
@@ -270,6 +279,7 @@ class Aggregator:
             "mc_high": self.mc_high,
             "last_mc_usd": self.last_mc_usd,
             "last_trade_bucket": self.last_trade_bucket,
+            "seen_wallets": list(self.seen_wallets),
         }
 
     @classmethod
@@ -288,4 +298,5 @@ class Aggregator:
         agg.mc_high = d["mc_high"]
         agg.last_mc_usd = d["last_mc_usd"]
         agg.last_trade_bucket = d["last_trade_bucket"]
+        agg.seen_wallets = set(d.get("seen_wallets", []))
         return agg

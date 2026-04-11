@@ -96,6 +96,7 @@ class TokenManager:
             sol_amount=float(sol_amount),
             market_cap_sol=float(market_cap_sol),
             timestamp=event["timestamp"],
+            tx_signer=event.get("txSigner", ""),
         )
         update["mint"] = mint
         return update

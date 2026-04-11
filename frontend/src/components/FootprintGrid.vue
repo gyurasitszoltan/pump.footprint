@@ -109,6 +109,7 @@ const statRows = computed(() => {
     { label: 'Buy%', key: '_buypct', format: (v, s) => fmtBuyPct(s), bgFn: 'buypct', textColor: '#fff' },
     { label: 'Delta', key: 'delta', format: (v, s) => fmtSolSigned(v), bgFn: 'delta', textColor: '#fff' },
     { label: 'Trades', key: 'trades', format: (v, s) => v > 0 ? String(v) : '', bgFn: null, textColor: '#777' },
+    { label: 'N Wall', key: 'neww', format: (v, s) => v > 0 ? String(v) : '', bgFn: null, textColor: '#777' },
   ]
   for (let i = 0; i < numBins; i++) {
     rows.push({

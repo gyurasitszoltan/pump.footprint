@@ -69,6 +69,7 @@ class BucketStats:
     sell_vol: float = 0.0
     delta: float = 0.0
     trades: int = 0
+    new_wallets: int = 0
     # Trade size bins: list of {buy, sell} per bin
     # Index 0 = smallest bin, last = largest bin
     size_bins: list[dict] = field(default_factory=list)
@@ -84,6 +85,7 @@ class BucketStats:
             "sell": round(self.sell_vol, 2),
             "delta": round(self.delta, 2),
             "trades": self.trades,
+            "neww": self.new_wallets,
             "bins": [{"buy": round(b["buy"], 2), "sell": round(b["sell"], 2)} for b in self.size_bins],
         }
 
@@ -92,6 +94,7 @@ class BucketStats:
         s = cls(
             volume=d["vol"], buy_vol=d["buy"], sell_vol=d["sell"],
             delta=d["delta"], trades=d["trades"],
+            new_wallets=d.get("neww", 0),
         )
         s.size_bins = d.get("bins", [])
         return s
