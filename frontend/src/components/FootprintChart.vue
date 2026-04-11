@@ -17,7 +17,8 @@ watch(() => props.footprint.current_bucket, async () => {
   if (initialScrollDone) return
   await nextTick()
   if (scrollContainer.value) {
-    scrollContainer.value.scrollLeft = scrollContainer.value.scrollWidth
+    scrollContainer.value.scrollLeft = 0
+    scrollContainer.value.scrollTop = scrollContainer.value.scrollHeight
     initialScrollDone = true
   }
 })
