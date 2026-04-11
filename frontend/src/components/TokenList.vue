@@ -10,9 +10,9 @@ const emit = defineEmits(['select'])
 </script>
 
 <template>
-  <div class="border border-gray-800 rounded mb-2">
+  <div class="border border-gray-800 rounded mb-2 overflow-y-auto" style="max-height:20vh;">
     <table class="w-full text-xs">
-      <thead>
+      <thead class="sticky top-0 z-10" style="background:#0d0d0d;">
         <tr class="text-gray-500 border-b border-gray-800">
           <th class="text-left px-2 py-1 font-normal">Token</th>
           <th class="text-right px-2 py-1 font-normal w-16">Time</th>
