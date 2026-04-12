@@ -76,6 +76,30 @@ const maxAbsBucketDelta = computed(() => {
   return max || 1
 })
 
+const cvdMap = computed(() => {
+  const map = {}
+  let cum = 0
+  for (let b = 0; b < NUM_BUCKETS; b++) {
+    cum += getStat(b).delta
+    map[b] = cum
+  }
+  return map
+})
+
+const maxAbsCvd = computed(() => {
+  let max = 0
+  for (let b = 0; b < NUM_BUCKETS; b++) {
+    const abs = Math.abs(cvdMap.value[b])
+    if (abs > max) max = abs
+  }
+  return max || 1
+})
+
+function fmtCvd(bucket) {
+  const v = cvdMap.value[bucket]
+  return v ? fmtSolSigned(v) : ''
+}
+
 function fmtBuySell(stat) {
   if (stat.vol === 0) return ''
   return `<span style="color:#4ade80">${fmtSol(stat.buy || 0)}</span><span style="color:#666">|</span><span style="color:#f87171">${fmtSol(stat.sell || 0)}</span>`
@@ -121,6 +145,7 @@ const statRows = computed(() => {
     { label: 'B|S', key: '_buysell', format: (v, s) => fmtBuySell(s), bgFn: 'volume', textColor: '#aaa', html: true },
     { label: 'Buy%', key: '_buypct', format: (v, s) => fmtBuyPct(s), bgFn: 'buypct', textColor: '#fff' },
     { label: 'Delta', key: 'delta', format: (v, s) => fmtSolSigned(v), bgFn: 'delta', textColor: '#fff' },
+    { label: 'CVD', key: '_cvd', format: () => '', bgFn: 'cvd', textColor: '#fff' },
     { label: 'Trades', key: 'trades', format: (v, s) => v > 0 ? String(v) : '', bgFn: null, textColor: '#777' },
     { label: 'N Wall', key: 'neww', format: (v, s) => v > 0 ? String(v) : '', bgFn: null, textColor: '#777' },
   ]
@@ -258,12 +283,12 @@ const stickyTopLeft = {
             width: CELL_W + 'px', minWidth: CELL_W + 'px', maxWidth: CELL_W + 'px',
             height: '12px', fontSize: '8px', padding: '0 2px',
             textAlign: 'center', whiteSpace: 'nowrap',
-            background: statBg(row, getStat(b)),
+            background: row.bgFn === 'cvd' ? deltaBgColor(cvdMap[b], maxAbsCvd) : statBg(row, getStat(b)),
             color: row.textColor,
             borderRight: '1px solid #111',
             position: 'sticky', bottom: `${(statRows.length - 1 - ri) * 12 + SCROLLBAR_H}px`, zIndex: 1,
           }"
-          v-html="row.format(getStat(b)[row.key], getStat(b))"
+          v-html="row.key === '_cvd' ? fmtCvd(b) : row.format(getStat(b)[row.key], getStat(b))"
         />
       </tr>
     </tfoot>
