@@ -79,9 +79,14 @@ const maxAbsBucketDelta = computed(() => {
 const cvdMap = computed(() => {
   const map = {}
   let cum = 0
+  let hadTrade = false
   for (let b = 0; b < NUM_BUCKETS; b++) {
-    cum += getStat(b).delta
-    map[b] = cum
+    const s = getStat(b)
+    if (s.trades > 0) {
+      cum += s.delta
+      hadTrade = true
+    }
+    map[b] = hadTrade && s.trades > 0 ? cum : null
   }
   return map
 })
@@ -89,8 +94,11 @@ const cvdMap = computed(() => {
 const maxAbsCvd = computed(() => {
   let max = 0
   for (let b = 0; b < NUM_BUCKETS; b++) {
-    const abs = Math.abs(cvdMap.value[b])
-    if (abs > max) max = abs
+    const v = cvdMap.value[b]
+    if (v != null) {
+      const abs = Math.abs(v)
+      if (abs > max) max = abs
+    }
   }
   return max || 1
 })
