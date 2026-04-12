@@ -118,8 +118,8 @@ class Aggregator:
             stats.sell_vol += sol_amount
             stats.delta -= sol_amount
 
-        # New wallet tracking
-        if tx_signer and tx_signer not in self.seen_wallets:
+        # New wallet tracking (only buy trades — sell-first wallets are pre-migration)
+        if tx_type == "buy" and tx_signer and tx_signer not in self.seen_wallets:
             self.seen_wallets.add(tx_signer)
             stats.new_wallets += 1
 
@@ -309,6 +309,20 @@ class Aggregator:
         """Trade count in the most recent active bucket."""
         stats = self.stats.get(self.last_trade_bucket)
         return stats.trades if stats else 0
+
+    def get_last_bucket_summary(self) -> dict:
+        """Summary stats for the most recent active bucket."""
+        stats = self.stats.get(self.last_trade_bucket)
+        if stats is None:
+            return {"new_w": 0, "vol": 0.0, "delta": 0.0, "buy_pct": 0, "uniq_w": 0}
+        total = stats.buy_vol + stats.sell_vol
+        return {
+            "new_w": stats.new_wallets,
+            "vol": round(stats.volume, 1),
+            "delta": round(stats.delta, 1),
+            "buy_pct": round(100 * stats.buy_vol / total) if total > 0 else 0,
+            "uniq_w": len(self.seen_wallets),
+        }
 
     def to_dict(self) -> dict:
         """Serialize full aggregator state for persistence."""

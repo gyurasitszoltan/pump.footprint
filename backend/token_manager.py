@@ -17,6 +17,17 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 
+LAUNCHPAD_LABELS = {
+    ("pump-amm", "pump"): "PF",
+    # ("raydium-cpmm", "raydium-launchpad"): "Ray",
+    # ("meteora-damm-v2", "meteora-launchpad"): "Met",
+}
+
+
+def _launchpad_label(pool: str, pool_creator: str) -> str:
+    return LAUNCHPAD_LABELS.get((pool, pool_creator), pool[:8] or "?")
+
+
 @dataclass
 class TokenState:
     mint: str
@@ -24,6 +35,7 @@ class TokenState:
     symbol: str
     migrate_ts_ms: int
     pool: str
+    pool_creator: str
     aggregator: Aggregator
     cleanup_handle: asyncio.TimerHandle | None = None
     expired: bool = False
@@ -56,6 +68,7 @@ class TokenManager:
             symbol=event.get("symbol", ""),
             migrate_ts_ms=migrate_ts_ms,
             pool=event.get("pool", ""),
+            pool_creator=event.get("poolCreatedBy", ""),
             aggregator=agg,
         )
 
@@ -130,13 +143,20 @@ class TokenManager:
             now_ms = int(time.time() * 1000)
         active_sec = (now_ms - state.migrate_ts_ms) / 1000.0
         agg = state.aggregator
+        bucket = agg.get_last_bucket_summary()
         return {
             "mint": state.mint,
             "name": state.name,
             "symbol": state.symbol,
             "migrate_ts_ms": state.migrate_ts_ms,
+            "launchpad": _launchpad_label(state.pool, state.pool_creator),
             "mc_usd": round(agg.last_mc_usd, 1),
             "trades_10s": agg.get_trades_last_bucket(),
+            "new_w": bucket["new_w"],
+            "vol_sol": bucket["vol"],
+            "delta_sol": bucket["delta"],
+            "buy_pct": bucket["buy_pct"],
+            "uniq_w": bucket["uniq_w"],
             "rsi14": agg.compute_rsi14(),
             "active_sec": round(active_sec, 0),
             "expired": state.expired,
@@ -168,6 +188,7 @@ class TokenManager:
                 symbol=data.get("symbol", ""),
                 migrate_ts_ms=data["migrate_ts_ms"],
                 pool=data.get("pool", ""),
+                pool_creator=data.get("pool_creator", ""),
                 aggregator=agg,
                 expired=True,
             )
