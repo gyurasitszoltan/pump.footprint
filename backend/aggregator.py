@@ -28,6 +28,16 @@ class Aggregator:
 
         # Track last mc for summary
         self.last_mc_usd: float = 0.0
+
+        # Wilder's RSI state (1s candle closes)
+        self._rsi_prev_bucket: int = -1
+        self._rsi_prev_close: float | None = None
+        self._rsi_last_close: float | None = None
+        self._rsi_avg_gain: float = 0.0
+        self._rsi_avg_loss: float = 0.0
+        self._rsi_count: int = 0
+        self._rsi_initial_gains: list[float] = []
+        self._rsi_initial_losses: list[float] = []
         self.last_trade_bucket: int = 0
 
         # Unique wallet tracking
@@ -52,6 +62,14 @@ class Aggregator:
         bucket_1s = int(rel_sec)
         if 0 <= bucket_1s < NUM_BUCKETS_1S:
             self.close_1s[bucket_1s] = mc_usd
+
+        # Update Wilder's RSI state on 1s bucket boundary
+        if bucket_1s != self._rsi_prev_bucket:
+            if self._rsi_prev_bucket >= 0 and self._rsi_prev_close is not None:
+                # Previous bucket just closed — feed its close into RSI
+                self._update_rsi(self._rsi_prev_close)
+            self._rsi_prev_bucket = bucket_1s
+        self._rsi_prev_close = mc_usd
 
         # 10s bucket
         bucket_10s = min(int(rel_sec // TIME_BUCKET_10S), NUM_BUCKETS_10S - 1)
@@ -116,6 +134,14 @@ class Aggregator:
         side = "buy" if tx_type == "buy" else "sell"
         stats.size_bins[bin_idx][side] += sol_amount
 
+        # Update RSI min/max for this 10s bucket
+        rsi = self.compute_rsi14()
+        if rsi is not None:
+            if stats.rsi_min is None or rsi < stats.rsi_min:
+                stats.rsi_min = rsi
+            if stats.rsi_max is None or rsi > stats.rsi_max:
+                stats.rsi_max = rsi
+
         # Compute imbalance for the updated cell + neighbors
         imbalance_updates = self._compute_imbalance_around(bucket_10s, mc_level)
 
@@ -177,21 +203,40 @@ class Aggregator:
             return 1.0
         return max((abs(c.delta) for c in self.cells.values()), default=1.0) or 1.0
 
+    def _update_rsi(self, close: float) -> None:
+        """Update Wilder's RSI running averages with a 1s candle close."""
+        if self._rsi_last_close is None:
+            self._rsi_last_close = close
+            return
+
+        change = close - self._rsi_last_close
+        self._rsi_last_close = close
+        gain = change if change > 0 else 0.0
+        loss = -change if change < 0 else 0.0
+
+        self._rsi_count += 1
+
+        if self._rsi_count <= RSI_PERIOD:
+            # Seed phase: collect first RSI_PERIOD changes
+            self._rsi_initial_gains.append(gain)
+            self._rsi_initial_losses.append(loss)
+            if self._rsi_count == RSI_PERIOD:
+                self._rsi_avg_gain = sum(self._rsi_initial_gains) / RSI_PERIOD
+                self._rsi_avg_loss = sum(self._rsi_initial_losses) / RSI_PERIOD
+                self._rsi_initial_gains.clear()
+                self._rsi_initial_losses.clear()
+        else:
+            # Wilder's smoothing
+            self._rsi_avg_gain = (self._rsi_avg_gain * (RSI_PERIOD - 1) + gain) / RSI_PERIOD
+            self._rsi_avg_loss = (self._rsi_avg_loss * (RSI_PERIOD - 1) + loss) / RSI_PERIOD
+
     def compute_rsi14(self) -> float | None:
-        """Wilder's RSI from 1-second close values."""
-        closes = [v for v in self.close_1s if v is not None]
-        if len(closes) < RSI_PERIOD + 1:
+        """Wilder's RSI-14 with exponential smoothing."""
+        if self._rsi_count < RSI_PERIOD:
             return None
 
-        changes = [closes[i] - closes[i - 1] for i in range(1, len(closes))]
-
-        # Use last RSI_PERIOD changes
-        recent = changes[-(RSI_PERIOD):]
-        gains = [c for c in recent if c > 0]
-        losses = [-c for c in recent if c < 0]
-
-        avg_gain = sum(gains) / RSI_PERIOD if gains else 0.0
-        avg_loss = sum(losses) / RSI_PERIOD if losses else 0.0
+        avg_gain = self._rsi_avg_gain
+        avg_loss = self._rsi_avg_loss
 
         if avg_loss == 0:
             return 100.0 if avg_gain > 0 else 50.0

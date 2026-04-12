@@ -73,6 +73,9 @@ class BucketStats:
     # Trade size bins: list of {buy, sell} per bin
     # Index 0 = smallest bin, last = largest bin
     size_bins: list[dict] = field(default_factory=list)
+    # RSI min/max within this 10s bucket
+    rsi_min: float | None = None
+    rsi_max: float | None = None
 
     def ensure_bins(self, n: int):
         while len(self.size_bins) < n:
@@ -87,6 +90,8 @@ class BucketStats:
             "trades": self.trades,
             "neww": self.new_wallets,
             "bins": [{"buy": round(b["buy"], 2), "sell": round(b["sell"], 2)} for b in self.size_bins],
+            "rsi_min": self.rsi_min,
+            "rsi_max": self.rsi_max,
         }
 
     @classmethod
@@ -97,4 +102,6 @@ class BucketStats:
             new_wallets=d.get("neww", 0),
         )
         s.size_bins = d.get("bins", [])
+        s.rsi_min = d.get("rsi_min")
+        s.rsi_max = d.get("rsi_max")
         return s

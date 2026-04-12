@@ -96,6 +96,17 @@ function fmtSizeBin(stat, binIdx) {
   return `${buyStr}<span style="color:#666">|</span>${sellStr}`
 }
 
+function fmtRsi(v, stat) {
+  const mn = stat.rsi_min
+  const mx = stat.rsi_max
+  if (mn == null && mx == null) return ''
+  const minVal = mn != null ? Math.round(mn) : '-'
+  const maxVal = mx != null ? Math.round(mx) : '-'
+  const minColor = mn != null && mn < 30 ? '#f87171' : '#777'
+  const maxColor = mx != null && mx > 70 ? '#4ade80' : '#777'
+  return `<span style="color:${minColor}">${minVal}</span><span style="color:#666">|</span><span style="color:${maxColor}">${maxVal}</span>`
+}
+
 function sizeBinLabel(bins, idx) {
   if (idx === 0) return `<${bins[0]}`
   if (idx === bins.length) return `>${bins[bins.length - 1]}`
@@ -123,6 +134,14 @@ const statRows = computed(() => {
       html: true,
     })
   }
+  rows.push({
+    label: 'RSI',
+    key: '_rsi',
+    format: (v, s) => fmtRsi(v, s),
+    bgFn: 'rsi',
+    textColor: '#aaa',
+    html: true,
+  })
   return rows
 })
 
@@ -133,6 +152,11 @@ function statBg(row, stat) {
     if (!stat.vol) return '#111'
     const pct = (stat.buy || 0) / stat.vol
     return deltaBgColor(pct - 0.5, 0.5)  // >50% green, <50% red
+  }
+  if (row.bgFn === 'rsi') {
+    if (stat.rsi_min != null && stat.rsi_min < 30) return '#7f1d1d'
+    if (stat.rsi_max != null && stat.rsi_max > 70) return '#14532d'
+    return '#111'
   }
   return '#111'
 }
