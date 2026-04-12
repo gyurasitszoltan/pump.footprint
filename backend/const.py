@@ -9,6 +9,7 @@ INITIAL_MC_LOW = 20_000
 INITIAL_MC_HIGH = 50_000
 IMBALANCE_RATIO = 2.5
 RSI_PERIOD = 14
+TRADES_DIR = __import__("pathlib").Path(__file__).parent.parent / "trades"
 FEEDER_URI = "ws://192.168.1.122:9944"
 SERVER_PORT = 8080
 TRADE_SIZE_BINS = [1.0, 2.0]  # SOL boundaries: <1, 1-2, >2

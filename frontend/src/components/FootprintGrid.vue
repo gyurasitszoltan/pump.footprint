@@ -13,6 +13,8 @@ const props = defineProps({
   footprint: { type: Object, required: true },
 })
 
+const emit = defineEmits(['bucket-click'])
+
 const buckets = computed(() => Array.from({ length: NUM_BUCKETS }, (_, i) => i))
 
 const mcLevels = computed(() => {
@@ -165,13 +167,15 @@ const stickyTopLeft = {
         <th
           v-for="b in buckets"
           :key="b"
-          class="text-gray-600 font-normal border-r whitespace-nowrap"
+          class="text-gray-600 font-normal border-r whitespace-nowrap hover:text-white hover:bg-gray-800"
           :style="{
             width: CELL_W + 'px', minWidth: CELL_W + 'px', maxWidth: CELL_W + 'px',
             height: CELL_H + 'px', fontSize: '8px', padding: '1px 3px',
             textAlign: 'center', borderColor: '#1a1a1a',
             position: 'sticky', top: 0, zIndex: 3, background: '#0d0d0d',
+            cursor: 'pointer',
           }"
+          @click="emit('bucket-click', b)"
         >{{ timeLabel(b) }}</th>
       </tr>
     </thead>

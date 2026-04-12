@@ -7,8 +7,9 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 from .aggregator import Aggregator
-from .const import MAX_DURATION_SEC, SOL_USD
+from .const import MAX_DURATION_SEC, SOL_USD, TIME_BUCKET_10S, NUM_BUCKETS_10S
 from .persistence import save_token, load_all_expired
+from . import trade_storage
 
 if TYPE_CHECKING:
     from .ws_server import WsServer
@@ -75,6 +76,7 @@ class TokenManager:
             return
         state.expired = True
         log.info("Token expired: %s (%s)", mint[:12], state.symbol)
+        trade_storage.close_token(mint)
         try:
             save_token(state)
         except Exception:
@@ -91,14 +93,28 @@ class TokenManager:
         if sol_amount is None or market_cap_sol is None:
             return None
 
+        timestamp = event["timestamp"]
         update = state.aggregator.process_trade(
             tx_type=event["txType"],
             sol_amount=float(sol_amount),
             market_cap_sol=float(market_cap_sol),
-            timestamp=event["timestamp"],
+            timestamp=timestamp,
             tx_signer=event.get("txSigner", ""),
         )
         update["mint"] = mint
+
+        # Append individual trade to JSONL file
+        rel_sec = max(0, (timestamp - state.migrate_ts_ms) / 1000.0)
+        bucket_10s = min(int(rel_sec // TIME_BUCKET_10S), NUM_BUCKETS_10S - 1)
+        trade_storage.append_trade(mint, {
+            "b": bucket_10s,
+            "ts": timestamp,
+            "s": event["txType"],
+            "sol": abs(float(sol_amount)),
+            "mc": round(float(market_cap_sol) * SOL_USD, 1),
+            "w": event.get("txSigner", ""),
+        })
+
         return update
 
     def get_token_summaries(self, include_expired: bool = True) -> list[dict]:
