@@ -5,9 +5,12 @@ import { fmtSol, fmtMcUsd, fmtMint } from '../utils/format.js'
 
 Chart.register(ScatterController, LinearScale, PointElement, Tooltip, Legend)
 
+const MC_LEVEL_SIZE = 1000
+
 const props = defineProps({
   mint: { type: String, required: true },
   bucketIdx: { type: Number, required: true },
+  mcLevel: { type: Number, default: null },
 })
 
 const emit = defineEmits(['close'])
@@ -32,7 +35,11 @@ onMounted(async () => {
     const res = await fetch(`/api/trades/${props.mint}/${props.bucketIdx}`)
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const data = await res.json()
-    trades.value = data.trades.sort((a, b) => a.ts - b.ts)
+    let filtered = data.trades
+    if (props.mcLevel !== null) {
+      filtered = filtered.filter(t => Math.floor(t.mc / MC_LEVEL_SIZE) * MC_LEVEL_SIZE === props.mcLevel)
+    }
+    trades.value = filtered.sort((a, b) => a.ts - b.ts)
   } catch (e) {
     error.value = e.message
   } finally {
@@ -65,6 +72,7 @@ function renderChart() {
     const point = {
       x: (tr.ts - minTs) / 1000,
       y: tr.mc,
+      sol: tr.sol,
       r: Math.max(3, Math.min(12, Math.sqrt(tr.sol) * 4)),
     }
     if (tr.side === 'buy') buys.push(point)
@@ -104,7 +112,7 @@ function renderChart() {
           callbacks: {
             label(ctx) {
               const d = ctx.raw
-              return `${ctx.dataset.label} | ${d.y.toLocaleString()} USD | ${d.x.toFixed(2)}s`
+              return `${ctx.dataset.label} | ${d.sol.toFixed(2)} SOL | ${fmtMcUsd(d.y)} | ${d.x.toFixed(2)}s`
             },
           },
         },
@@ -152,6 +160,7 @@ function fmtTime(ts) {
       <div class="flex items-center justify-between px-4 py-2 border-b border-gray-800">
         <span class="text-gray-300 text-sm font-mono">
           Bucket {{ bucketIdx }} ({{ bucketIdx * 10 }}s - {{ bucketIdx * 10 + 10 }}s)
+          <template v-if="mcLevel !== null"> &mdash; {{ fmtMcUsd(mcLevel) }} level</template>
           &mdash; {{ trades.length }} trades
         </span>
         <button

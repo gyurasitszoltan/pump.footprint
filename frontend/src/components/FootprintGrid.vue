@@ -13,7 +13,7 @@ const props = defineProps({
   footprint: { type: Object, required: true },
 })
 
-const emit = defineEmits(['bucket-click'])
+const emit = defineEmits(['bucket-click', 'cell-click'])
 
 const buckets = computed(() => Array.from({ length: NUM_BUCKETS }, (_, i) => i))
 
@@ -197,7 +197,9 @@ const stickyTopLeft = {
             borderBottom: isLastPrice(b, level) ? '1px solid #fff' : '1px solid #111',
             borderTop: '1px solid transparent',
             borderRight: isPoc(b, level) ? '2px solid #ffd700' : '1px solid #111',
+            cursor: 'pointer',
           }"
+          @click="emit('cell-click', { bucket: b, mcLevel: level })"
         >
           <FootprintCell
             :cell="getCell(b, level)"

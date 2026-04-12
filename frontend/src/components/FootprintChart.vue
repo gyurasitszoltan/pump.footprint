@@ -12,9 +12,17 @@ let initialScrollDone = false
 
 const showBucketModal = ref(false)
 const selectedBucket = ref(0)
+const selectedMcLevel = ref(null)
 
 function onBucketClick(bucketIdx) {
   selectedBucket.value = bucketIdx
+  selectedMcLevel.value = null
+  showBucketModal.value = true
+}
+
+function onCellClick({ bucket, mcLevel }) {
+  selectedBucket.value = bucket
+  selectedMcLevel.value = mcLevel
   showBucketModal.value = true
 }
 
@@ -36,7 +44,7 @@ watch(() => props.footprint.current_bucket, async () => {
 <template>
   <div class="border border-gray-800 rounded">
     <div ref="scrollContainer" class="fp-scroll" style="max-height:70vh;">
-      <FootprintGrid :footprint="footprint" @bucket-click="onBucketClick" />
+      <FootprintGrid :footprint="footprint" @bucket-click="onBucketClick" @cell-click="onCellClick" />
     </div>
     <div class="text-gray-600 text-[9px] px-2 py-1 border-t border-gray-800">
       Green = buy &gt; sell | Red = sell &gt; buy | Cell: buy_sol | sell_sol | Bucket: 10s x $1,000 MC | SOL=$85
@@ -47,6 +55,7 @@ watch(() => props.footprint.current_bucket, async () => {
       v-if="showBucketModal"
       :mint="footprint.mint"
       :bucket-idx="selectedBucket"
+      :mc-level="selectedMcLevel"
       @close="showBucketModal = false"
     />
   </Teleport>
