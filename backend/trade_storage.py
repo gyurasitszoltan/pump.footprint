@@ -67,3 +67,14 @@ def close_token(mint: str):
             fh.close()
         except Exception:
             pass
+
+
+def delete_token_file(mint: str):
+    """Close handle and delete the JSONL trade file for a token."""
+    close_token(mint)
+    path = TRADES_DIR / f"{mint}.jsonl"
+    try:
+        path.unlink(missing_ok=True)
+        log.info("Deleted trade file: %s", path)
+    except Exception:
+        log.exception("Failed to delete trade file %s", path)

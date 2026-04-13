@@ -73,6 +73,11 @@ class WsServer:
         elif msg_type == "unselect_token":
             self.clients[ws] = None
 
+        elif msg_type == "delete_token":
+            mint = data.get("mint")
+            if mint:
+                await self.token_manager.delete_token(mint)
+
     async def broadcast_token_added(self, token_summary: dict):
         msg = orjson.dumps({"type": "token_added", "token": token_summary})
         await self._broadcast_all(msg)

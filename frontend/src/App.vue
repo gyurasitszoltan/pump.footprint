@@ -5,11 +5,15 @@ import TokenList from './components/TokenList.vue'
 import FootprintChart from './components/FootprintChart.vue'
 
 const store = useTokenStore()
-const { connected, selectToken: wsSelectToken, unselectToken } = useWebSocket(store.handleMessage)
+const { connected, selectToken: wsSelectToken, unselectToken, deleteToken } = useWebSocket(store.handleMessage)
 
 function onSelectToken(mint) {
   store.selectToken(mint)
   wsSelectToken(mint)
+}
+
+function onDeleteToken(mint) {
+  deleteToken(mint)
 }
 </script>
 
@@ -28,6 +32,7 @@ function onSelectToken(mint) {
       :tokens="store.tokenList.value"
       :selected-mint="store.selectedMint.value"
       @select="onSelectToken"
+      @delete="onDeleteToken"
     />
 
     <FootprintChart

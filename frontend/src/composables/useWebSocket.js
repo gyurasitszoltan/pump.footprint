@@ -60,6 +60,10 @@ export function useWebSocket(onMessage) {
     send({ type: 'unselect_token' })
   }
 
+  function deleteToken(mint) {
+    send({ type: 'delete_token', mint })
+  }
+
   connect()
 
   onUnmounted(() => {
@@ -67,5 +71,5 @@ export function useWebSocket(onMessage) {
     if (ws) ws.close()
   })
 
-  return { connected, send, selectToken, unselectToken }
+  return { connected, send, selectToken, unselectToken, deleteToken }
 }

@@ -35,6 +35,17 @@ def save_token(state: TokenState):
     log.info("Saved expired token: %s (%s) → %s", state.mint[:12], state.symbol, path)
 
 
+def delete_token_file(mint: str):
+    """Delete the saved output JSON for a token, if it exists."""
+    path = OUTPUT_DIR / f"{mint}.json"
+    try:
+        if path.exists():
+            path.unlink()
+            log.info("Deleted output file: %s", path)
+    except Exception:
+        log.exception("Failed to delete output file %s", path)
+
+
 def load_all_expired() -> list[dict]:
     """Load all saved tokens from output/*.json. Returns raw dicts."""
     if not OUTPUT_DIR.is_dir():
@@ -49,5 +60,6 @@ def load_all_expired() -> list[dict]:
         except Exception:
             log.exception("Failed to load %s", f)
 
+    results.sort(key=lambda d: d.get("migrate_ts_ms", 0))
     log.info("Loaded %d expired tokens from %s", len(results), OUTPUT_DIR)
     return results

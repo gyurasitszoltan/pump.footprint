@@ -16,8 +16,8 @@ from .const import (
     SOL_USD,
     TIME_BUCKET_10S,
 )
+from . import persistence, trade_storage
 from .persistence import save_token, load_all_expired
-from . import trade_storage
 
 if TYPE_CHECKING:
     from .ws_server import WsServer
@@ -107,6 +107,12 @@ class TokenManager:
         if mc_usd > MAX_MC_USD_AFTER_60S:
             await self._drop_token(mint, "mc_above_threshold")
             return
+
+    async def delete_token(self, mint: str):
+        """User-initiated delete: drop from memory + remove disk artifacts."""
+        await self._drop_token(mint, "user_deleted")
+        trade_storage.delete_token_file(mint)
+        persistence.delete_token_file(mint)
 
     async def _drop_token(self, mint: str, reason: str):
         state = self.active_tokens.pop(mint, None)

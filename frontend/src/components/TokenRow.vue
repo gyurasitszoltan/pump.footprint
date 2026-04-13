@@ -8,7 +8,7 @@ const props = defineProps({
   selected: { type: Boolean, default: false },
 })
 
-const emit = defineEmits(['select'])
+const emit = defineEmits(['select', 'delete'])
 
 const now = ref(Date.now())
 let timer = null
@@ -44,6 +44,13 @@ function copyMint() {
     :class="[selected ? 'bg-blue-900/30' : '', token.expired ? 'opacity-50' : '']"
     @click="emit('select')"
   >
+    <td class="px-1 py-1">
+      <button
+        class="text-xs opacity-50 hover:opacity-100 hover:text-red-400"
+        @click.stop="emit('delete')"
+        title="Delete token"
+      >🗑️</button>
+    </td>
     <td class="px-2 py-1">
       <div class="flex items-center gap-1.5">
         <a
