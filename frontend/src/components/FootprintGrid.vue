@@ -321,9 +321,9 @@ const stickyTopLeft = {
             color: row.textColor,
             borderBottom: '1px solid #111',
             boxShadow: row.key === '_rsi'
-              ? (rsiDivergenceBuckets.get(b) === 'both'    ? 'inset 0 -4px 0 #facc15'
-                : rsiDivergenceBuckets.get(b) === 'bullish' ? 'inset 0 -4px 0 #4ade80'
-                : rsiDivergenceBuckets.get(b) === 'bearish' ? 'inset 0 -4px 0 #f87171'
+              ? (rsiDivergenceBuckets.get(b) === 'both'    ? 'inset 0 -1px 0 #facc15'
+                : rsiDivergenceBuckets.get(b) === 'bullish' ? 'inset 0 -1px 0 #4ade80'
+                : rsiDivergenceBuckets.get(b) === 'bearish' ? 'inset 0 -1px 0 #f87171'
                 : 'none')
               : 'none',
             borderRight: '1px solid #111',
