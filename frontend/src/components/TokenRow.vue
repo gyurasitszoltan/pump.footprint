@@ -22,6 +22,11 @@ const activeSec = computed(() => {
   return Math.floor((now.value - props.token.migrate_ts_ms) / 1000)
 })
 
+const migrationTime = computed(() => {
+  const d = new Date(props.token.migrate_ts_ms)
+  return d.toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+})
+
 const isExpiring = computed(() => activeSec.value >= 540)
 
 const copyIcon = ref('📋')
@@ -60,6 +65,7 @@ function copyMint() {
       class="text-right px-2 py-1 tabular-nums"
       :class="isExpiring ? 'text-red-400 bg-red-900/30 font-bold' : 'text-gray-400'"
     >{{ activeSec }}s</td>
+    <td class="text-right px-2 py-1 text-gray-500 tabular-nums">{{ migrationTime }}</td>
     <td class="text-right px-2 py-1 text-gray-400 tabular-nums">{{ token.trades_10s }}</td>
     <td class="text-right px-2 py-1 text-gray-400 tabular-nums">{{ token.new_w || '' }}</td>
     <td class="text-right px-2 py-1 text-gray-400 tabular-nums">{{ fmtSol(token.vol_sol || 0) }}</td>

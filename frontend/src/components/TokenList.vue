@@ -17,6 +17,7 @@ const emit = defineEmits(['select'])
           <th class="text-left px-2 py-1 font-normal">Token</th>
           <th class="text-left px-2 py-1 font-normal w-20">Pad</th>
           <th class="text-right px-2 py-1 font-normal w-14">Time</th>
+          <th class="text-right px-2 py-1 font-normal w-20">Migrate</th>
           <th class="text-right px-2 py-1 font-normal w-14">Trades</th>
           <th class="text-right px-2 py-1 font-normal w-10">NW</th>
           <th class="text-right px-2 py-1 font-normal w-16">Vol</th>
