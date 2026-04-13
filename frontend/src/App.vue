@@ -15,6 +15,12 @@ function onSelectToken(mint) {
 function onDeleteToken(mint) {
   deleteToken(mint)
 }
+
+function requestNotificationPermission() {
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission()
+  }
+}
 </script>
 
 <template>
@@ -22,9 +28,10 @@ function onDeleteToken(mint) {
     <div class="flex items-center gap-3 mb-2 px-2">
       <h1 class="text-sm font-bold text-gray-400">PUMP FOOTPRINT</h1>
       <span
-        class="w-2 h-2 rounded-full"
+        class="w-2 h-2 rounded-full cursor-pointer"
         :class="connected ? 'bg-green-500' : 'bg-red-500'"
         :title="connected ? 'Connected' : 'Disconnected'"
+        @click="requestNotificationPermission"
       />
     </div>
 

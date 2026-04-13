@@ -43,6 +43,20 @@ export function useTokenStore() {
 
   function handleTokenAdded(data) {
     tokens.set(data.token.mint, data.token)
+    sendTokenNotification(data.token)
+  }
+
+  function sendTokenNotification(token) {
+    if (!('Notification' in window)) return
+    const title = `🚀 ${token.symbol || token.mint.slice(0, 6)}`
+    const options = { body: token.name || '', tag: token.mint, renotify: false }
+    if (Notification.permission === 'granted') {
+      new Notification(title, options)
+    } else if (Notification.permission === 'default') {
+      Notification.requestPermission().then(perm => {
+        if (perm === 'granted') new Notification(title, options)
+      })
+    }
   }
 
   function handleTokenRemoved(data) {
