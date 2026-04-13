@@ -319,12 +319,13 @@ const stickyTopLeft = {
             textAlign: 'center', whiteSpace: 'nowrap',
             background: row.bgFn === 'cvd' ? deltaBgColor(cvdMap[b], maxAbsCvd) : statBg(row, getStat(b)),
             color: row.textColor,
-            borderBottom: row.key === '_rsi'
-              ? (rsiDivergenceBuckets.get(b) === 'both'    ? '4px solid #facc15'
-                : rsiDivergenceBuckets.get(b) === 'bullish' ? '4px solid #4ade80'
-                : rsiDivergenceBuckets.get(b) === 'bearish' ? '4px solid #f87171'
-                : '1px solid #111')
-              : '1px solid #111',
+            borderBottom: '1px solid #111',
+            boxShadow: row.key === '_rsi'
+              ? (rsiDivergenceBuckets.get(b) === 'both'    ? 'inset 0 -4px 0 #facc15'
+                : rsiDivergenceBuckets.get(b) === 'bullish' ? 'inset 0 -4px 0 #4ade80'
+                : rsiDivergenceBuckets.get(b) === 'bearish' ? 'inset 0 -4px 0 #f87171'
+                : 'none')
+              : 'none',
             borderRight: '1px solid #111',
             position: 'sticky', bottom: `${(statRows.length - 1 - ri) * 12 + SCROLLBAR_H}px`, zIndex: 1,
           }"
