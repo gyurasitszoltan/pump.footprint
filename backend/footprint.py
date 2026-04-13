@@ -76,6 +76,11 @@ class BucketStats:
     # RSI min/max within this 10s bucket
     rsi_min: float | None = None
     rsi_max: float | None = None
+    # EMA values at the end of this 10s bucket
+    ema9:  float | None = None
+    ema21: float | None = None
+    # Net EMA area: sum(ema9 - ema21) over each 1s close in this bucket
+    ema_area: float = 0.0
 
     def ensure_bins(self, n: int):
         while len(self.size_bins) < n:
@@ -92,6 +97,9 @@ class BucketStats:
             "bins": [{"buy": round(b["buy"], 2), "sell": round(b["sell"], 2)} for b in self.size_bins],
             "rsi_min": self.rsi_min,
             "rsi_max": self.rsi_max,
+            "ema9":      self.ema9,
+            "ema21":     self.ema21,
+            "ema_area":  round(self.ema_area, 1),
         }
 
     @classmethod
@@ -104,4 +112,7 @@ class BucketStats:
         s.size_bins = d.get("bins", [])
         s.rsi_min = d.get("rsi_min")
         s.rsi_max = d.get("rsi_max")
+        s.ema9     = d.get("ema9")
+        s.ema21    = d.get("ema21")
+        s.ema_area = d.get("ema_area", 0.0)
         return s

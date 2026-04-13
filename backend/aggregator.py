@@ -40,6 +40,14 @@ class Aggregator:
         self._rsi_initial_losses: list[float] = []
         self.last_trade_bucket: int = 0
 
+        # EMA state (1s candle closes)
+        self._ema9:  float | None = None
+        self._ema9_count:  int = 0
+        self._ema9_seed:   list[float] = []
+        self._ema21: float | None = None
+        self._ema21_count: int = 0
+        self._ema21_seed:  list[float] = []
+
         # Unique wallet tracking
         self.seen_wallets: set[str] = set()
 
@@ -63,11 +71,23 @@ class Aggregator:
         if 0 <= bucket_1s < NUM_BUCKETS_1S:
             self.close_1s[bucket_1s] = mc_usd
 
-        # Update Wilder's RSI state on 1s bucket boundary
+        # Update Wilder's RSI + EMA state on 1s bucket boundary
         if bucket_1s != self._rsi_prev_bucket:
             if self._rsi_prev_bucket >= 0 and self._rsi_prev_close is not None:
-                # Previous bucket just closed — feed its close into RSI
+                # Previous bucket just closed — feed its close into RSI + EMA
+                closed_1s = self._rsi_prev_bucket
                 self._update_rsi(self._rsi_prev_close)
+                self._update_ema(self._rsi_prev_close)
+                # Accumulate EMA area for the 10s bucket the closed 1s candle belongs to
+                ema9_v  = self.compute_ema9()
+                ema21_v = self.compute_ema21()
+                if ema9_v is not None and ema21_v is not None:
+                    closed_10s = min(closed_1s // TIME_BUCKET_10S, NUM_BUCKETS_10S - 1)
+                    closed_stats = self.stats.get(closed_10s)
+                    if closed_stats is None:
+                        closed_stats = BucketStats()
+                        self.stats[closed_10s] = closed_stats
+                    closed_stats.ema_area += ema9_v - ema21_v
             self._rsi_prev_bucket = bucket_1s
         self._rsi_prev_close = mc_usd
 
@@ -141,6 +161,12 @@ class Aggregator:
                 stats.rsi_min = rsi
             if stats.rsi_max is None or rsi > stats.rsi_max:
                 stats.rsi_max = rsi
+
+        # Update EMA for this 10s bucket
+        ema9 = self.compute_ema9()
+        ema21 = self.compute_ema21()
+        if ema9  is not None: stats.ema9  = ema9
+        if ema21 is not None: stats.ema21 = ema21
 
         # Compute imbalance for the updated cell + neighbors
         imbalance_updates = self._compute_imbalance_around(bucket_10s, mc_level)
@@ -230,6 +256,31 @@ class Aggregator:
             self._rsi_avg_gain = (self._rsi_avg_gain * (RSI_PERIOD - 1) + gain) / RSI_PERIOD
             self._rsi_avg_loss = (self._rsi_avg_loss * (RSI_PERIOD - 1) + loss) / RSI_PERIOD
 
+    def _update_ema(self, close: float) -> None:
+        """Update EMA9 and EMA21 with a 1s candle close."""
+        for period, seed_attr, count_attr, val_attr in (
+            (9,  '_ema9_seed',  '_ema9_count',  '_ema9'),
+            (21, '_ema21_seed', '_ema21_count', '_ema21'),
+        ):
+            count = getattr(self, count_attr) + 1
+            setattr(self, count_attr, count)
+            seed = getattr(self, seed_attr)
+            if count < period:
+                seed.append(close)
+            elif count == period:
+                seed.append(close)
+                setattr(self, val_attr, sum(seed) / period)
+                seed.clear()
+            else:
+                k = 2 / (period + 1)
+                setattr(self, val_attr, close * k + getattr(self, val_attr) * (1 - k))
+
+    def compute_ema9(self) -> float | None:
+        return round(self._ema9, 1) if self._ema9 is not None else None
+
+    def compute_ema21(self) -> float | None:
+        return round(self._ema21, 1) if self._ema21 is not None else None
+
     def compute_rsi14(self) -> float | None:
         """Wilder's RSI-14 with exponential smoothing."""
         if self._rsi_count < RSI_PERIOD:
@@ -300,6 +351,8 @@ class Aggregator:
             "stats": stats_dict,
             "poc": poc,
             "rsi14": self.compute_rsi14(),
+            "ema9":  self.compute_ema9(),
+            "ema21": self.compute_ema21(),
             "current_bucket": self.last_trade_bucket,
             "max_abs_delta": self._max_abs_delta(),
             "size_bins": TRADE_SIZE_BINS,

@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import FootprintCell from './FootprintCell.vue'
 import { candleShadow, deltaBgColor, volumeBgColor } from '../utils/colors.js'
-import { fmtSol, fmtSolSigned } from '../utils/format.js'
+import { fmtSol, fmtSolSigned, fmtMcSigned } from '../utils/format.js'
 
 const MC_LEVEL_SIZE = 1000
 const NUM_BUCKETS = 60
@@ -99,6 +99,15 @@ const maxAbsCvd = computed(() => {
       const abs = Math.abs(v)
       if (abs > max) max = abs
     }
+  }
+  return max || 1
+})
+
+const maxAbsEmaArea = computed(() => {
+  let max = 0
+  for (let b = 0; b < NUM_BUCKETS; b++) {
+    const abs = Math.abs(getStat(b).ema_area || 0)
+    if (abs > max) max = abs
   }
   return max || 1
 })
@@ -201,6 +210,13 @@ const statRows = computed(() => {
     textColor: '#aaa',
     html: true,
   })
+  rows.push({
+    label: 'EMA±',
+    key: 'ema_area',
+    format: (v, s) => fmtMcSigned(s.ema_area),
+    bgFn: 'ema_area',
+    textColor: '#fff',
+  })
   return rows
 })
 
@@ -216,6 +232,9 @@ function statBg(row, stat) {
     if (stat.rsi_min != null && stat.rsi_min < 30) return '#7f1d1d'
     if (stat.rsi_max != null && stat.rsi_max > 70) return '#14532d'
     return '#111'
+  }
+  if (row.bgFn === 'ema_area') {
+    return deltaBgColor(stat.ema_area || 0, maxAbsEmaArea.value)
   }
   return '#111'
 }
