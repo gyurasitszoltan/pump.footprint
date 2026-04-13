@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { Chart, ScatterController, LinearScale, PointElement, Tooltip, Legend } from 'chart.js'
 import { fmtSol, fmtMcUsd, fmtMint } from '../utils/format.js'
 
@@ -20,6 +20,9 @@ const error = ref(null)
 const trades = ref([])
 const chartCanvas = ref(null)
 let chartInstance = null
+let tradeChartMap = {}
+let buyRadii = []
+let sellRadii = []
 
 function onKeydown(e) {
   if (e.key === 'Escape') emit('close')
@@ -67,16 +70,24 @@ function renderChart() {
   const minTs = t[0].ts
   const buys = []
   const sells = []
+  buyRadii = []
+  sellRadii = []
+  tradeChartMap = {}
+  let buyIdx = 0, sellIdx = 0
 
-  for (const tr of t) {
-    const point = {
-      x: (tr.ts - minTs) / 1000,
-      y: tr.mc,
-      sol: tr.sol,
-      r: Math.max(3, Math.min(12, Math.sqrt(tr.sol) * 4)),
+  for (let i = 0; i < t.length; i++) {
+    const tr = t[i]
+    const r = Math.max(3, Math.min(12, Math.sqrt(tr.sol) * 4))
+    const point = { x: (tr.ts - minTs) / 1000, y: tr.mc, sol: tr.sol, r }
+    if (tr.side === 'buy') {
+      tradeChartMap[i] = { datasetIndex: 0, pointIndex: buyIdx++ }
+      buys.push(point)
+      buyRadii.push(r)
+    } else {
+      tradeChartMap[i] = { datasetIndex: 1, pointIndex: sellIdx++ }
+      sells.push(point)
+      sellRadii.push(r)
     }
-    if (tr.side === 'buy') buys.push(point)
-    else sells.push(point)
   }
 
   chartInstance = new Chart(chartCanvas.value, {
@@ -139,6 +150,44 @@ function renderChart() {
   })
 }
 
+const walletColors = computed(() => {
+  const counts = {}
+  for (const tr of trades.value) {
+    counts[tr.wallet] = (counts[tr.wallet] || 0) + 1
+  }
+  const palette = [
+    '#f97316','#a78bfa','#38bdf8','#fb7185','#34d399',
+    '#fbbf24','#e879f9','#60a5fa','#f472b6','#4ade80',
+    '#c084fc','#22d3ee','#f9a8d4','#86efac','#fde68a',
+  ]
+  let idx = 0
+  const map = {}
+  for (const [wallet, count] of Object.entries(counts)) {
+    if (count > 1) {
+      map[wallet] = palette[idx % palette.length]
+      idx++
+    }
+  }
+  return map
+})
+
+function onTradeHover(i) {
+  if (!chartInstance || tradeChartMap[i] === undefined) return
+  const { datasetIndex, pointIndex } = tradeChartMap[i]
+  chartInstance.data.datasets[0].pointRadius = [...buyRadii]
+  chartInstance.data.datasets[1].pointRadius = [...sellRadii]
+  const baseR = datasetIndex === 0 ? buyRadii[pointIndex] : sellRadii[pointIndex]
+  chartInstance.data.datasets[datasetIndex].pointRadius[pointIndex] = baseR * 2.5
+  chartInstance.update('none')
+}
+
+function onTradeLeave() {
+  if (!chartInstance) return
+  chartInstance.data.datasets[0].pointRadius = [...buyRadii]
+  chartInstance.data.datasets[1].pointRadius = [...sellRadii]
+  chartInstance.update('none')
+}
+
 function fmtTime(ts) {
   const d = new Date(ts)
   return d.toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
@@ -170,41 +219,45 @@ function fmtTime(ts) {
       </div>
 
       <!-- Content -->
-      <div class="flex-1 overflow-auto p-4" style="min-height:0;">
+      <div class="flex flex-col flex-1 p-4" style="min-height:0;">
         <div v-if="loading" class="text-gray-500 text-center py-8">Loading...</div>
         <div v-else-if="error" class="text-red-400 text-center py-8">{{ error }}</div>
         <template v-else>
-          <!-- Chart -->
-          <div v-if="trades.length > 0" style="height:220px;margin-bottom:12px;">
+          <!-- Chart (fixed, nem scrollozódik) -->
+          <div v-if="trades.length > 0" style="height:220px;margin-bottom:12px;flex-shrink:0;">
             <canvas ref="chartCanvas"></canvas>
           </div>
           <div v-else class="text-gray-600 text-center py-4 text-sm">No trades in this bucket</div>
 
-          <!-- Trade table -->
-          <table v-if="trades.length > 0" class="w-full text-[9px] font-mono border-collapse">
-            <thead>
-              <tr class="text-gray-500">
-                <th class="text-left px-2 py-1 border-b border-gray-800">Time</th>
-                <th class="text-center px-2 py-1 border-b border-gray-800">Side</th>
-                <th class="text-right px-2 py-1 border-b border-gray-800">SOL</th>
-                <th class="text-right px-2 py-1 border-b border-gray-800">MC</th>
-                <th class="text-left px-2 py-1 border-b border-gray-800">Wallet</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(tr, i) in trades" :key="i" class="hover:bg-gray-900">
-                <td class="text-gray-400 px-2 py-0.5">{{ fmtTime(tr.ts) }}</td>
-                <td class="text-center px-2 py-0.5">
-                  <span :class="tr.side === 'buy' ? 'text-green-400' : 'text-red-400'">
-                    {{ tr.side }}
-                  </span>
-                </td>
-                <td class="text-gray-300 text-right px-2 py-0.5">{{ fmtSol(tr.sol) }}</td>
-                <td class="text-gray-300 text-right px-2 py-0.5">{{ fmtMcUsd(tr.mc) }}</td>
-                <td class="text-gray-600 px-2 py-0.5">{{ fmtMint(tr.wallet) }}</td>
-              </tr>
-            </tbody>
-          </table>
+          <!-- Trade table (scrollos) -->
+          <div v-if="trades.length > 0" class="overflow-auto flex-1" style="min-height:0;">
+            <table class="w-full text-[9px] font-mono border-collapse">
+              <thead class="sticky top-0 bg-[#111]">
+                <tr class="text-gray-500">
+                  <th class="text-left px-2 py-1 border-b border-gray-800">Time</th>
+                  <th class="text-center px-2 py-1 border-b border-gray-800">Side</th>
+                  <th class="text-right px-2 py-1 border-b border-gray-800">SOL</th>
+                  <th class="text-left px-2 py-1 border-b border-gray-800"></th>
+                  <th class="text-right px-2 py-1 border-b border-gray-800">MC</th>
+                  <th class="text-left px-2 py-1 border-b border-gray-800">Wallet</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(tr, i) in trades" :key="i" class="hover:bg-gray-900" @mouseenter="onTradeHover(i)" @mouseleave="onTradeLeave">
+                  <td class="text-gray-400 px-2 py-0.5">{{ fmtTime(tr.ts) }}</td>
+                  <td class="text-center px-2 py-0.5">
+                    <span :class="tr.side === 'buy' ? 'text-green-400' : 'text-red-400'">
+                      {{ tr.side }}
+                    </span>
+                  </td>
+                  <td class="text-gray-300 text-right px-2 py-0.5">{{ fmtSol(tr.sol) }}</td>
+                  <td class="px-2 py-0.5" :class="tr.side === 'buy' ? 'text-green-600' : 'text-red-700'">{{ '#'.repeat(Math.min(15, Math.max(1, Math.floor(tr.sol)))) }}</td>
+                  <td class="text-gray-300 text-right px-2 py-0.5">{{ fmtMcUsd(tr.mc) }}</td>
+                  <td class="px-2 py-0.5" :style="walletColors[tr.wallet] ? { color: walletColors[tr.wallet] } : { color: '#4b5563' }">{{ fmtMint(tr.wallet) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </template>
       </div>
     </div>
