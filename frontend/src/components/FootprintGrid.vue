@@ -104,22 +104,29 @@ const maxAbsCvd = computed(() => {
 })
 
 const rsiDivergenceBuckets = computed(() => {
-  const set = new Set()
+  const map = new Map()
   for (let b = 1; b < NUM_BUCKETS; b++) {
     const cur = getStat(b)
     const prev = getStat(b - 1)
     const curOhlc = getOhlc(b)
     const prevOhlc = getOhlc(b - 1)
-    if (
+    if (!curOhlc || !prevOhlc) continue
+
+    const bullish =
       cur.rsi_min != null && prev.rsi_min != null &&
-      curOhlc?.l != null && prevOhlc?.l != null &&
       prev.rsi_min < cur.rsi_min &&
       curOhlc.l < prevOhlc.l
-    ) {
-      set.add(b)
-    }
+
+    const bearish =
+      cur.rsi_max != null && prev.rsi_max != null &&
+      prev.rsi_max > cur.rsi_max &&
+      curOhlc.h > prevOhlc.h
+
+    if (bullish && bearish) map.set(b, 'both')
+    else if (bullish) map.set(b, 'bullish')
+    else if (bearish) map.set(b, 'bearish')
   }
-  return set
+  return map
 })
 
 function fmtCvd(bucket) {
@@ -312,7 +319,12 @@ const stickyTopLeft = {
             textAlign: 'center', whiteSpace: 'nowrap',
             background: row.bgFn === 'cvd' ? deltaBgColor(cvdMap[b], maxAbsCvd) : statBg(row, getStat(b)),
             color: row.textColor,
-            borderBottom: row.key === '_rsi' && rsiDivergenceBuckets.has(b) ? '2px solid #facc15' : '1px solid #111',
+            borderBottom: row.key === '_rsi'
+              ? (rsiDivergenceBuckets.get(b) === 'both'    ? '2px solid #facc15'
+                : rsiDivergenceBuckets.get(b) === 'bullish' ? '2px solid #4ade80'
+                : rsiDivergenceBuckets.get(b) === 'bearish' ? '2px solid #f87171'
+                : '1px solid #111')
+              : '1px solid #111',
             borderRight: '1px solid #111',
             position: 'sticky', bottom: `${(statRows.length - 1 - ri) * 12 + SCROLLBAR_H}px`, zIndex: 1,
           }"
