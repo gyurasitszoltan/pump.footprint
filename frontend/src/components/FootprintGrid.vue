@@ -320,9 +320,9 @@ const stickyTopLeft = {
             background: row.bgFn === 'cvd' ? deltaBgColor(cvdMap[b], maxAbsCvd) : statBg(row, getStat(b)),
             color: row.textColor,
             borderBottom: row.key === '_rsi'
-              ? (rsiDivergenceBuckets.get(b) === 'both'    ? '2px solid #facc15'
-                : rsiDivergenceBuckets.get(b) === 'bullish' ? '2px solid #4ade80'
-                : rsiDivergenceBuckets.get(b) === 'bearish' ? '2px solid #f87171'
+              ? (rsiDivergenceBuckets.get(b) === 'both'    ? '4px solid #facc15'
+                : rsiDivergenceBuckets.get(b) === 'bullish' ? '4px solid #4ade80'
+                : rsiDivergenceBuckets.get(b) === 'bearish' ? '4px solid #f87171'
                 : '1px solid #111')
               : '1px solid #111',
             borderRight: '1px solid #111',
