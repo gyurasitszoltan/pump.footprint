@@ -7,7 +7,15 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 from .aggregator import Aggregator
-from .const import MAX_DURATION_SEC, SOL_USD, TIME_BUCKET_10S, NUM_BUCKETS_10S
+from .const import (
+    MAX_DURATION_SEC,
+    MAX_MC_USD_AFTER_60S,
+    MIN_MC_USD_AFTER_60S,
+    NUM_BUCKETS_10S,
+    POST_ACTIVATION_CHECK_SEC,
+    SOL_USD,
+    TIME_BUCKET_10S,
+)
 from .persistence import save_token, load_all_expired
 from . import trade_storage
 
@@ -76,12 +84,41 @@ class TokenManager:
         state.cleanup_handle = loop.call_later(
             MAX_DURATION_SEC, lambda m=mint: asyncio.ensure_future(self._expire_token(m))
         )
+        loop.call_later(
+            POST_ACTIVATION_CHECK_SEC,
+            lambda m=mint: asyncio.ensure_future(self._post_activation_check(m)),
+        )
 
         self.active_tokens[mint] = state
         log.info("Token activated: %s (%s) pool=%s", mint[:12], state.symbol, state.pool)
 
         if self._ws_server:
             asyncio.ensure_future(self._ws_server.broadcast_token_added(self._token_summary(state)))
+
+    async def _post_activation_check(self, mint: str):
+        state = self.active_tokens.get(mint)
+        if state is None or state.expired:
+            return
+
+        mc_usd = state.aggregator.last_mc_usd
+        if mc_usd < MIN_MC_USD_AFTER_60S:
+            await self._drop_token(mint, "mc_below_threshold")
+            return
+        if mc_usd > MAX_MC_USD_AFTER_60S:
+            await self._drop_token(mint, "mc_above_threshold")
+            return
+
+    async def _drop_token(self, mint: str, reason: str):
+        state = self.active_tokens.pop(mint, None)
+        if state is None:
+            return
+        if state.cleanup_handle is not None:
+            state.cleanup_handle.cancel()
+            state.cleanup_handle = None
+        trade_storage.close_token(mint)
+        log.info("Token dropped: %s (%s) reason=%s", mint[:12], state.symbol, reason)
+        if self._ws_server:
+            await self._ws_server.broadcast_token_removed(mint)
 
     async def _expire_token(self, mint: str):
         state = self.active_tokens.get(mint)
