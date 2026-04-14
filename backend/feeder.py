@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 import orjson
 import websockets
 
-from .const import FEEDER_URI
+from .const import FEEDER_URI, SOL_USD
 
 if TYPE_CHECKING:
     from .token_manager import TokenManager
@@ -71,3 +71,10 @@ async def _handle_event(event: dict, token_manager: TokenManager, ws_server: WsS
         update = token_manager.process_trade(event)
         if update:
             await ws_server.broadcast_footprint_update(update)
+            await ws_server.broadcast_trade_update(
+                mint=event["mint"],
+                ts=event["timestamp"],
+                side=event["txType"],
+                sol=abs(float(event["solAmount"])),
+                mc=round(float(event["marketCapSol"]) * SOL_USD, 1),
+            )

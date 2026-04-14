@@ -106,6 +106,19 @@ class WsServer:
             if subscribed_mint == mint:
                 await self._send_raw(ws, msg)
 
+    async def broadcast_trade_update(self, mint: str, ts: int, side: str, sol: float, mc: float):
+        msg = orjson.dumps({
+            "type": "trade_update",
+            "mint": mint,
+            "ts":   ts,
+            "side": side,
+            "sol":  sol,
+            "mc":   mc,
+        })
+        for ws, subscribed_mint in list(self.clients.items()):
+            if subscribed_mint == mint:
+                await self._send_raw(ws, msg)
+
     async def _broadcast_all(self, msg: bytes):
         for ws in list(self.clients.keys()):
             await self._send_raw(ws, msg)

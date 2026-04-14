@@ -2,6 +2,8 @@ import { reactive, ref, computed } from 'vue'
 
 const tokens = reactive(new Map())
 const selectedMint = ref(null)
+const recentTrades = ref([])
+const TRADES_MAX = 80
 const footprint = reactive({
   mint: null,
   mc_levels: [],
@@ -25,6 +27,7 @@ export function useTokenStore() {
       token_liked: handleTokenLiked,
       footprint_snapshot: handleFootprintSnapshot,
       footprint_update: handleFootprintUpdate,
+      trade_update: handleTradeUpdate,
     }
     const handler = handlers[data.type]
     if (handler) handler(data)
@@ -125,6 +128,14 @@ export function useTokenStore() {
     }
   }
 
+  function handleTradeUpdate(data) {
+    if (data.mint !== selectedMint.value) return
+    recentTrades.value = [
+      { ts: data.ts, side: data.side, sol: data.sol, mc: data.mc },
+      ...recentTrades.value,
+    ].slice(0, TRADES_MAX)
+  }
+
   function clearFootprint() {
     footprint.mint = null
     footprint.mc_levels = []
@@ -136,10 +147,12 @@ export function useTokenStore() {
     footprint.current_bucket = 0
     footprint.max_abs_delta = 1
     footprint.size_bins = [1, 2]
+    recentTrades.value = []
   }
 
   function selectToken(mint) {
     selectedMint.value = mint
+    recentTrades.value = []
   }
 
   const tokenList = computed(() => Array.from(tokens.values()).reverse())
@@ -149,6 +162,7 @@ export function useTokenStore() {
     tokenList,
     selectedMint,
     footprint,
+    recentTrades,
     handleMessage,
     selectToken,
   }

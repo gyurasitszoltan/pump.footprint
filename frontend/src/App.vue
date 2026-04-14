@@ -3,6 +3,7 @@ import { useWebSocket } from './composables/useWebSocket.js'
 import { useTokenStore } from './composables/useTokenStore.js'
 import TokenList from './components/TokenList.vue'
 import FootprintChart from './components/FootprintChart.vue'
+import TimeAndSales from './components/TimeAndSales.vue'
 
 const store = useTokenStore()
 const { connected, selectToken: wsSelectToken, unselectToken, deleteToken, likeToken } = useWebSocket(store.handleMessage)
@@ -28,31 +29,44 @@ function requestNotificationPermission() {
 </script>
 
 <template>
-  <div class="min-h-screen p-2">
-    <div class="flex items-center gap-3 mb-2 px-2">
-      <h1 class="text-sm font-bold text-gray-400">PUMP FOOTPRINT</h1>
-      <span
-        class="w-2 h-2 rounded-full cursor-pointer"
-        :class="connected ? 'bg-green-500' : 'bg-red-500'"
-        :title="connected ? 'Connected' : 'Disconnected'"
-        @click="requestNotificationPermission"
+  <div class="min-h-screen p-2 flex gap-2">
+
+    <!-- Bal: meglévő tartalom -->
+    <div class="flex-1 min-w-0">
+      <div class="flex items-center gap-3 mb-2 px-2">
+        <h1 class="text-sm font-bold text-gray-400">PUMP FOOTPRINT</h1>
+        <span
+          class="w-2 h-2 rounded-full cursor-pointer"
+          :class="connected ? 'bg-green-500' : 'bg-red-500'"
+          :title="connected ? 'Connected' : 'Disconnected'"
+          @click="requestNotificationPermission"
+        />
+      </div>
+
+      <TokenList
+        :tokens="store.tokenList.value"
+        :selected-mint="store.selectedMint.value"
+        @select="onSelectToken"
+        @delete="onDeleteToken"
+        @like="onLikeToken"
       />
+
+      <FootprintChart
+        v-if="store.selectedMint.value"
+        :footprint="store.footprint"
+      />
+      <div v-else class="text-gray-600 text-sm mt-8 text-center">
+        Select a token to view footprint chart
+      </div>
     </div>
 
-    <TokenList
-      :tokens="store.tokenList.value"
-      :selected-mint="store.selectedMint.value"
-      @select="onSelectToken"
-      @delete="onDeleteToken"
-      @like="onLikeToken"
+    <!-- Jobb: Time & Sales (csak aktív, nem lejárt tokennél) -->
+    <TimeAndSales
+      v-if="store.selectedMint.value && !store.tokens.get(store.selectedMint.value)?.expired"
+      :trades="store.recentTrades.value"
+      class="self-start sticky top-2"
+      style="height: calc(100vh - 1rem);"
     />
 
-    <FootprintChart
-      v-if="store.selectedMint.value"
-      :footprint="store.footprint"
-    />
-    <div v-else class="text-gray-600 text-sm mt-8 text-center">
-      Select a token to view footprint chart
-    </div>
   </div>
 </template>
