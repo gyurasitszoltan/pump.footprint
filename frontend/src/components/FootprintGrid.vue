@@ -189,6 +189,7 @@ const statRows = computed(() => {
     { label: 'Buy%', key: '_buypct', format: (v, s) => fmtBuyPct(s), bgFn: 'buypct', textColor: '#fff' },
     { label: 'Delta', key: 'delta', format: (v, s) => fmtSolSigned(v), bgFn: 'delta', textColor: '#fff' },
     { label: 'CVD', key: '_cvd', format: () => '', bgFn: 'cvd', textColor: '#fff' },
+    { label: 'EMA±', key: 'ema_area', format: (v, s) => fmtMcSigned(s.ema_area), bgFn: 'ema_area', textColor: '#fff' },
     { label: 'Trades', key: 'trades', format: (v, s) => v > 0 ? String(v) : '', bgFn: null, textColor: '#777' },
     { label: 'N Wall', key: 'neww', format: (v, s) => v > 0 ? String(v) : '', bgFn: null, textColor: '#777' },
   ]
@@ -209,13 +210,6 @@ const statRows = computed(() => {
     bgFn: 'rsi',
     textColor: '#aaa',
     html: true,
-  })
-  rows.push({
-    label: 'EMA±',
-    key: 'ema_area',
-    format: (v, s) => fmtMcSigned(s.ema_area),
-    bgFn: 'ema_area',
-    textColor: '#fff',
   })
   return rows
 })
