@@ -64,6 +64,10 @@ export function useWebSocket(onMessage) {
     send({ type: 'delete_token', mint })
   }
 
+  function likeToken(mint, liked) {
+    send({ type: 'like_token', mint, liked })
+  }
+
   connect()
 
   onUnmounted(() => {
@@ -71,5 +75,5 @@ export function useWebSocket(onMessage) {
     if (ws) ws.close()
   })
 
-  return { connected, send, selectToken, unselectToken, deleteToken }
+  return { connected, send, selectToken, unselectToken, deleteToken, likeToken }
 }

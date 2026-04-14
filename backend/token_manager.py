@@ -47,6 +47,7 @@ class TokenState:
     aggregator: Aggregator
     cleanup_handle: asyncio.TimerHandle | None = None
     expired: bool = False
+    liked: bool = False
 
 
 class TokenManager:
@@ -203,6 +204,7 @@ class TokenManager:
             "rsi14": agg.compute_rsi14(),
             "active_sec": round(active_sec, 0),
             "expired": state.expired,
+            "liked": state.liked,
         }
 
     def get_footprint_snapshot(self, mint: str) -> dict | None:
@@ -213,6 +215,20 @@ class TokenManager:
         snapshot["mint"] = mint
         snapshot["type"] = "footprint_snapshot"
         return snapshot
+
+    async def like_token(self, mint: str, liked: bool):
+        """Toggle liked state. If expired, immediately rewrites JSON file."""
+        state = self.active_tokens.get(mint)
+        if state is None:
+            return
+        state.liked = liked
+        if state.expired:
+            try:
+                save_token(state)
+            except Exception:
+                log.exception("Failed to update liked for expired token %s", mint[:12])
+        if self._ws_server:
+            await self._ws_server.broadcast_token_liked(mint, liked)
 
     def is_active(self, mint: str) -> bool:
         state = self.active_tokens.get(mint)
@@ -234,5 +250,6 @@ class TokenManager:
                 pool_creator=data.get("pool_creator", ""),
                 aggregator=agg,
                 expired=True,
+                liked=data.get("liked", False),
             )
             self.active_tokens[mint] = state

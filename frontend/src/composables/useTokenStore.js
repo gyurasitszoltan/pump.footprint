@@ -22,6 +22,7 @@ export function useTokenStore() {
       token_added: handleTokenAdded,
       token_removed: handleTokenRemoved,
       token_summary_update: handleSummaryUpdate,
+      token_liked: handleTokenLiked,
       footprint_snapshot: handleFootprintSnapshot,
       footprint_update: handleFootprintUpdate,
     }
@@ -71,6 +72,13 @@ export function useTokenStore() {
     const existing = tokens.get(data.mint)
     if (existing) {
       Object.assign(existing, data)
+    }
+  }
+
+  function handleTokenLiked(data) {
+    const existing = tokens.get(data.mint)
+    if (existing) {
+      existing.liked = data.liked
     }
   }
 

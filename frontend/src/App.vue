@@ -5,7 +5,7 @@ import TokenList from './components/TokenList.vue'
 import FootprintChart from './components/FootprintChart.vue'
 
 const store = useTokenStore()
-const { connected, selectToken: wsSelectToken, unselectToken, deleteToken } = useWebSocket(store.handleMessage)
+const { connected, selectToken: wsSelectToken, unselectToken, deleteToken, likeToken } = useWebSocket(store.handleMessage)
 
 function onSelectToken(mint) {
   store.selectToken(mint)
@@ -14,6 +14,10 @@ function onSelectToken(mint) {
 
 function onDeleteToken(mint) {
   deleteToken(mint)
+}
+
+function onLikeToken(mint, liked) {
+  likeToken(mint, liked)
 }
 
 function requestNotificationPermission() {
@@ -40,6 +44,7 @@ function requestNotificationPermission() {
       :selected-mint="store.selectedMint.value"
       @select="onSelectToken"
       @delete="onDeleteToken"
+      @like="onLikeToken"
     />
 
     <FootprintChart

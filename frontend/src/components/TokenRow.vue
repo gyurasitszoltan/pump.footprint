@@ -8,7 +8,7 @@ const props = defineProps({
   selected: { type: Boolean, default: false },
 })
 
-const emit = defineEmits(['select', 'delete'])
+const emit = defineEmits(['select', 'delete', 'like'])
 
 const now = ref(Date.now())
 let timer = null
@@ -90,5 +90,13 @@ function copyMint() {
       class="text-right px-2 py-1 tabular-nums font-bold"
       :style="{ color: rsiColor(token.rsi14) }"
     >{{ token.rsi14 !== null && token.rsi14 !== undefined ? token.rsi14 : '—' }}</td>
+    <td class="px-1 py-1 text-center">
+      <button
+        class="text-xs transition-opacity"
+        :class="token.liked ? 'opacity-100' : 'opacity-15 hover:opacity-50'"
+        @click.stop="emit('like', !token.liked)"
+        title="Like token"
+      >👍</button>
+    </td>
   </tr>
 </template>

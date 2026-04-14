@@ -78,8 +78,18 @@ class WsServer:
             if mint:
                 await self.token_manager.delete_token(mint)
 
+        elif msg_type == "like_token":
+            mint = data.get("mint")
+            liked = bool(data.get("liked", False))
+            if mint:
+                await self.token_manager.like_token(mint, liked)
+
     async def broadcast_token_added(self, token_summary: dict):
         msg = orjson.dumps({"type": "token_added", "token": token_summary})
+        await self._broadcast_all(msg)
+
+    async def broadcast_token_liked(self, mint: str, liked: bool):
+        msg = orjson.dumps({"type": "token_liked", "mint": mint, "liked": liked})
         await self._broadcast_all(msg)
 
     async def broadcast_token_removed(self, mint: str):

@@ -6,7 +6,7 @@ defineProps({
   selectedMint: { type: String, default: null },
 })
 
-const emit = defineEmits(['select', 'delete'])
+const emit = defineEmits(['select', 'delete', 'like'])
 </script>
 
 <template>
@@ -27,6 +27,7 @@ const emit = defineEmits(['select', 'delete'])
           <th class="text-right px-2 py-1 font-normal w-12">UW</th>
           <th class="text-right px-2 py-1 font-normal w-20">MCap</th>
           <th class="text-right px-2 py-1 font-normal w-14">RSI</th>
+          <th class="w-6 px-1 py-1 font-normal"></th>
         </tr>
       </thead>
       <tbody>
@@ -37,6 +38,7 @@ const emit = defineEmits(['select', 'delete'])
           :selected="token.mint === selectedMint"
           @select="emit('select', token.mint)"
           @delete="emit('delete', token.mint)"
+          @like="emit('like', token.mint, $event)"
         />
       </tbody>
     </table>

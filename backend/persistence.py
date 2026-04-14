@@ -27,6 +27,7 @@ def save_token(state: TokenState):
         "migrate_ts_ms": state.migrate_ts_ms,
         "pool": state.pool,
         "pool_creator": state.pool_creator,
+        "liked": state.liked,
         "aggregator": state.aggregator.to_dict(),
     }
 
