@@ -1,5 +1,7 @@
 # Pump.fun Footprint
 
+![Pump.fun Footprint képernyőkép](./screen.png)
+
 Real-time Pump.fun footprint chart alkalmazás migrált tokenek követésére.
 
 Az alkalmazás egy lokális feeder WebSockethez csatlakozik, a bejövő trade adatokat 1 másodperces és 10 másodperces bucketekbe aggregálja, majd ezeket egy Vue alapú felületen jeleníti meg footprint chartként.
