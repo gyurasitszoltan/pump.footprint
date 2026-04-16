@@ -1,12 +1,15 @@
 <script setup>
+import { ref } from 'vue'
 import { useWebSocket } from './composables/useWebSocket.js'
 import { useTokenStore } from './composables/useTokenStore.js'
 import TokenList from './components/TokenList.vue'
 import FootprintChart from './components/FootprintChart.vue'
 import TimeAndSales from './components/TimeAndSales.vue'
+import SettingsModal from './components/SettingsModal.vue'
 
 const store = useTokenStore()
 const { connected, selectToken: wsSelectToken, unselectToken, deleteToken, likeToken } = useWebSocket(store.handleMessage)
+const settingsOpen = ref(false)
 
 function onSelectToken(mint) {
   store.selectToken(mint)
@@ -31,9 +34,16 @@ function requestNotificationPermission() {
 <template>
   <div class="min-h-screen p-2 flex gap-2">
 
+    <SettingsModal v-model="settingsOpen" />
+
     <!-- Bal: meglévő tartalom -->
     <div class="flex-1 min-w-0">
       <div class="flex items-center gap-3 mb-2 px-2">
+        <button
+          @click="settingsOpen = true"
+          style="color:#555; background:none; border:none; cursor:pointer; font-size:13px; line-height:1; padding:0; font-family:monospace;"
+          title="Settings"
+        >⚙</button>
         <h1 class="text-sm font-bold text-gray-400">PUMP FOOTPRINT</h1>
         <span
           class="w-2 h-2 rounded-full cursor-pointer"

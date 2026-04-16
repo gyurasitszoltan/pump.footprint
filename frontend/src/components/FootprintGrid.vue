@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import FootprintCell from './FootprintCell.vue'
 import { candleShadow, deltaBgColor, volumeBgColor } from '../utils/colors.js'
 import { fmtSol, fmtSolSigned, fmtMcSigned } from '../utils/format.js'
+import { useSettings } from '../composables/useSettings.js'
 
 const MC_LEVEL_SIZE = 1000
 const NUM_BUCKETS = 60
@@ -262,6 +263,16 @@ function statBg(row, stat) {
 
 const SCROLLBAR_H = 8  // matches .fp-scroll::-webkit-scrollbar height
 
+const { settings } = useSettings()
+
+const visibleStatRows = computed(() => {
+  const rowSettings = settings.barStat.rows
+  return statRows.value.filter(row => {
+    if (row.key?.startsWith('_bin')) return rowSettings['Size Bins'] !== false
+    return rowSettings[row.label] !== false
+  })
+})
+
 const stickyLeft = {
   position: 'sticky',
   left: 0,
@@ -338,16 +349,16 @@ const stickyTopLeft = {
       <tr>
         <td
           :colspan="NUM_BUCKETS + 1"
-          :style="{ height: '3px', background: '#2a2a2a', padding: 0, position: 'sticky', bottom: `${statRows.length * 12 + SCROLLBAR_H}px`, zIndex: 1 }"
+          :style="{ height: '3px', background: '#2a2a2a', padding: 0, position: 'sticky', bottom: `${visibleStatRows.length * 12 + SCROLLBAR_H}px`, zIndex: 1 }"
         />
       </tr>
-      <tr v-for="(row, ri) in statRows" :key="row.label">
+      <tr v-for="(row, ri) in visibleStatRows" :key="row.label">
         <td
           class="text-gray-500 font-bold text-right whitespace-nowrap border-r border-gray-800"
           :style="{
             width: '52px', minWidth: '52px', fontSize: '8px', padding: '1px 4px',
             background: row.bgFn === null ? '#111' : '#1a1a1a',
-            position: 'sticky', left: 0, bottom: `${(statRows.length - 1 - ri) * 12 + SCROLLBAR_H}px`, zIndex: 4,
+            position: 'sticky', left: 0, bottom: `${(visibleStatRows.length - 1 - ri) * 12 + SCROLLBAR_H}px`, zIndex: 4,
           }"
         >{{ row.label }}</td>
         <td
@@ -367,7 +378,7 @@ const stickyTopLeft = {
                 : 'none')
               : 'none',
             borderRight: '1px solid #111',
-            position: 'sticky', bottom: `${(statRows.length - 1 - ri) * 12 + SCROLLBAR_H}px`, zIndex: 1,
+            position: 'sticky', bottom: `${(visibleStatRows.length - 1 - ri) * 12 + SCROLLBAR_H}px`, zIndex: 1,
           }"
           v-html="row.key === '_cvd' ? fmtCvd(b) : row.format(getStat(b)[row.key], getStat(b))"
         />
