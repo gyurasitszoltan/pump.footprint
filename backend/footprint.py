@@ -81,6 +81,12 @@ class BucketStats:
     ema21: float | None = None
     # Net EMA area: sum(ema9 - ema21) over each 1s close in this bucket
     ema_area: float = 0.0
+    # Last known SOL in pool for this bucket
+    sol_in_pool: float | None = None
+    # Expected values from baseline × heat_factor
+    vol_exp:  float | None = None
+    tps_exp:  float | None = None
+    pool_exp: float | None = None
 
     def ensure_bins(self, n: int):
         while len(self.size_bins) < n:
@@ -100,6 +106,10 @@ class BucketStats:
             "ema9":      self.ema9,
             "ema21":     self.ema21,
             "ema_area":  round(self.ema_area, 1),
+            "sol_in_pool": round(self.sol_in_pool, 3) if self.sol_in_pool is not None else None,
+            "vol_exp":     round(self.vol_exp,     3) if self.vol_exp     is not None else None,
+            "tps_exp":     round(self.tps_exp,     3) if self.tps_exp     is not None else None,
+            "pool_exp":    round(self.pool_exp,    3) if self.pool_exp    is not None else None,
         }
 
     @classmethod
@@ -115,4 +125,8 @@ class BucketStats:
         s.ema9     = d.get("ema9")
         s.ema21    = d.get("ema21")
         s.ema_area = d.get("ema_area", 0.0)
+        s.sol_in_pool = d.get("sol_in_pool")
+        s.vol_exp     = d.get("vol_exp")
+        s.tps_exp     = d.get("tps_exp")
+        s.pool_exp    = d.get("pool_exp")
         return s

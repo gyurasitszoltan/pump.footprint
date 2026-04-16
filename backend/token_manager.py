@@ -167,6 +167,17 @@ class TokenManager:
         )
         update["mint"] = mint
 
+        # Update sol_in_pool from trade event if present; carry forward from token state
+        sol_in_pool_raw = event.get("solInPool")
+        if sol_in_pool_raw is not None:
+            state.sol_in_pool = float(sol_in_pool_raw)
+        if state.sol_in_pool is not None:
+            bucket_idx = update["bucket"]
+            bucket_stats = state.aggregator.stats.get(bucket_idx)
+            if bucket_stats is not None:
+                bucket_stats.sol_in_pool = state.sol_in_pool
+                update["stats"]["sol_in_pool"] = round(state.sol_in_pool, 3)
+
         # Append individual trade to JSONL file
         rel_sec = max(0, (timestamp - state.migrate_ts_ms) / 1000.0)
         bucket_10s = min(int(rel_sec // TIME_BUCKET_10S), NUM_BUCKETS_10S - 1)

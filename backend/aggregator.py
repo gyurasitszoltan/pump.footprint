@@ -6,6 +6,7 @@ from .const import (
     IMBALANCE_RATIO, RSI_PERIOD, TRADE_SIZE_BINS,
 )
 from .footprint import CellData, BucketOHLC, BucketStats
+from . import baseline_loader
 
 
 class Aggregator:
@@ -129,6 +130,12 @@ class Aggregator:
         if stats is None:
             stats = BucketStats()
             self.stats[bucket_10s] = stats
+            # Compute expected values once per bucket (static for its lifetime)
+            bucket_mid_sec = bucket_10s * 10 + 5
+            bucket_mid_ms  = self.migrate_ts_ms + bucket_10s * 10_000 + 5_000
+            stats.vol_exp  = baseline_loader.get_expected_vol(bucket_mid_sec, bucket_mid_ms)
+            stats.tps_exp  = baseline_loader.get_expected_tps(bucket_mid_sec, bucket_mid_ms)
+            stats.pool_exp = baseline_loader.get_expected_pool(bucket_mid_sec, bucket_mid_ms)
         stats.volume += sol_amount
         stats.trades += 1
         if tx_type == "buy":
