@@ -91,11 +91,11 @@ function copyMint() {
     </td>
     <td
       class="text-right px-2 py-1 tabular-nums"
-      :class="token.xgb_score >= 0.5 ? 'text-green-400' : token.xgb_score < 0.3 ? 'text-red-400' : 'text-gray-400'"
+      :class="token.xgb_score >= 0.5 ? 'text-red-400' : token.xgb_score < 0.3 ? 'text-green-400' : 'text-gray-400'"
     >{{ token.xgb_score != null ? token.xgb_score.toFixed(2) : '—' }}</td>
     <td
       class="text-right px-2 py-1 tabular-nums"
-      :class="token.lgb_score >= 0.5 ? 'text-green-400' : token.lgb_score < 0.3 ? 'text-red-400' : 'text-gray-400'"
+      :class="token.lgb_score >= 0.5 ? 'text-red-400' : token.lgb_score < 0.3 ? 'text-green-400' : 'text-gray-400'"
     >{{ token.lgb_score != null ? token.lgb_score.toFixed(2) : '—' }}</td>
     <td
       class="text-right px-2 py-1 tabular-nums font-bold"
