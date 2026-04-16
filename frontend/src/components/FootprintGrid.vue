@@ -55,7 +55,33 @@ function getCandleShadow(bucket, level) {
 
 // --- Stats ---
 function getStat(bucket) {
-  return props.footprint.stats[String(bucket)] || { vol: 0, delta: 0, trades: 0 }
+  return props.footprint.stats[String(bucket)] || { vol: 0, delta: 0, trades: 0, sol_in_pool: null, vol_exp: null, tps_exp: null, pool_exp: null }
+}
+
+function deviationBg(actual, expected) {
+  if (!expected || actual == null) return null
+  const ratio = (actual - expected) / expected
+  const abs = Math.abs(ratio)
+  if (abs < 0.10) return null
+  const up = ratio > 0
+  if (abs < 0.20) return up ? '#14532d' : '#450a0a'
+  if (abs < 0.30) return up ? '#166534' : '#7f1d1d'
+  return up ? '#15803d' : '#991b1b'
+}
+
+function fmtDevPct(actual, expected) {
+  if (!expected || actual == null) return ''
+  const pct = Math.round(((actual - expected) / expected) * 100)
+  return pct >= 0 ? `+${pct}%` : `${pct}%`
+}
+
+function fmtSplitDev(leftHtml, actual, expected) {
+  const devStr = fmtDevPct(actual, expected)
+  if (!devStr) return leftHtml
+  const bg = deviationBg(actual, expected)
+  const color = bg ? '#fff' : '#555'
+  const bgStyle = bg ? `background:${bg};padding:0 1px` : 'padding:0 1px'
+  return `${leftHtml}<span style="color:#333">|</span><span style="color:${color};${bgStyle}">${devStr}</span>`
 }
 
 const maxVol = computed(() => {
@@ -184,14 +210,15 @@ const statRows = computed(() => {
   const bins = props.footprint.size_bins || [1, 2]
   const numBins = bins.length + 1
   const rows = [
-    { label: 'Volume', key: 'vol', format: (v, s) => fmtSol(v), bgFn: 'volume', textColor: '#aaa' },
+    { label: 'Volume', key: 'vol', format: (v, s) => fmtSplitDev(`<span style="color:#aaa">${fmtSol(v)}</span>`, v, s.vol_exp), bgFn: 'volume', textColor: '#aaa', html: true },
     { label: 'B|S', key: '_buysell', format: (v, s) => fmtBuySell(s), bgFn: 'volume', textColor: '#aaa', html: true },
     { label: 'Buy%', key: '_buypct', format: (v, s) => fmtBuyPct(s), bgFn: 'buypct', textColor: '#fff' },
     { label: 'Delta', key: 'delta', format: (v, s) => fmtSolSigned(v), bgFn: 'delta', textColor: '#fff' },
     { label: 'CVD', key: '_cvd', format: () => '', bgFn: 'cvd', textColor: '#fff' },
     { label: 'EMA±', key: 'ema_area', format: (v, s) => fmtMcSigned(s.ema_area), bgFn: 'ema_area', textColor: '#fff' },
-    { label: 'Trades', key: 'trades', format: (v, s) => v > 0 ? String(v) : '', bgFn: null, textColor: '#777' },
+    { label: 'Trades', key: 'trades', format: (v, s) => fmtSplitDev(`<span style="color:#777">${v > 0 ? String(v) : ''}</span>`, v, s.tps_exp), bgFn: null, textColor: '#777', html: true },
     { label: 'N Wall', key: 'neww', format: (v, s) => v > 0 ? String(v) : '', bgFn: null, textColor: '#777' },
+    { label: 'Pool', key: 'sol_in_pool', format: (v, s) => fmtSplitDev(`<span style="color:#888">${v ? fmtSol(v) : ''}</span>`, v, s.pool_exp), bgFn: null, textColor: '#888', html: true },
   ]
   for (let i = 0; i < numBins; i++) {
     rows.push({
