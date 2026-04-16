@@ -86,6 +86,17 @@ function copyMint() {
     >{{ token.buy_pct != null ? token.buy_pct + '%' : '' }}</td>
     <td class="text-right px-2 py-1 text-gray-400 tabular-nums">{{ token.uniq_w || '' }}</td>
     <td class="text-right px-2 py-1 text-gray-300 tabular-nums">{{ fmtMcUsd(token.mc_usd || 0) }}</td>
+    <td class="text-right px-2 py-1 text-gray-400 tabular-nums">
+      {{ token.sol_in_pool != null ? fmtSol(token.sol_in_pool) : '—' }}
+    </td>
+    <td
+      class="text-right px-2 py-1 tabular-nums"
+      :class="token.xgb_score >= 0.5 ? 'text-green-400' : token.xgb_score < 0.3 ? 'text-red-400' : 'text-gray-400'"
+    >{{ token.xgb_score != null ? token.xgb_score.toFixed(2) : '—' }}</td>
+    <td
+      class="text-right px-2 py-1 tabular-nums"
+      :class="token.lgb_score >= 0.5 ? 'text-green-400' : token.lgb_score < 0.3 ? 'text-red-400' : 'text-gray-400'"
+    >{{ token.lgb_score != null ? token.lgb_score.toFixed(2) : '—' }}</td>
     <td
       class="text-right px-2 py-1 tabular-nums font-bold"
       :style="{ color: rsiColor(token.rsi14) }"

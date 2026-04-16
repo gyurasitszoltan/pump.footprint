@@ -26,6 +26,9 @@ const emit = defineEmits(['select', 'delete', 'like'])
           <th class="text-right px-2 py-1 font-normal w-12">Buy%</th>
           <th class="text-right px-2 py-1 font-normal w-12">UW</th>
           <th class="text-right px-2 py-1 font-normal w-20">MCap</th>
+          <th class="text-right px-2 py-1 font-normal w-16">SolPool</th>
+          <th class="text-right px-2 py-1 font-normal w-12">XGB</th>
+          <th class="text-right px-2 py-1 font-normal w-12">LGB</th>
           <th class="text-right px-2 py-1 font-normal w-14">RSI</th>
           <th class="w-6 px-1 py-1 font-normal"></th>
         </tr>

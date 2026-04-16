@@ -48,6 +48,9 @@ class TokenState:
     cleanup_handle: asyncio.TimerHandle | None = None
     expired: bool = False
     liked: bool = False
+    sol_in_pool: float | None = None
+    xgb_score: float | None = None
+    lgb_score: float | None = None
 
 
 class TokenManager:
@@ -71,6 +74,7 @@ class TokenManager:
         if mc_sol:
             agg.last_mc_usd = mc_sol * SOL_USD
 
+        df = event.get("datafilter") or {}
         state = TokenState(
             mint=mint,
             name=event.get("name", event.get("symbol", mint[:8])),
@@ -79,6 +83,9 @@ class TokenManager:
             pool=event.get("pool", ""),
             pool_creator=event.get("poolCreatedBy", ""),
             aggregator=agg,
+            sol_in_pool=event.get("solInPool"),
+            xgb_score=df.get("xgb_score"),
+            lgb_score=df.get("lgb_score"),
         )
 
         loop = asyncio.get_event_loop()
@@ -205,6 +212,9 @@ class TokenManager:
             "active_sec": round(active_sec, 0),
             "expired": state.expired,
             "liked": state.liked,
+            "sol_in_pool": state.sol_in_pool,
+            "xgb_score": state.xgb_score,
+            "lgb_score": state.lgb_score,
         }
 
     def get_footprint_snapshot(self, mint: str) -> dict | None:
