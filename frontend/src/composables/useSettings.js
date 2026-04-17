@@ -3,6 +3,9 @@ import { reactive, watch } from 'vue'
 const STORAGE_KEY = 'pf_settings'
 
 const DEFAULT_SETTINGS = {
+  timeAndSales: {
+    highlightThreshold: 5,
+  },
   barStat: {
     rows: {
       'Volume':    true,

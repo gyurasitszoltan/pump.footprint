@@ -8,7 +8,7 @@ const emit = defineEmits(['update:modelValue'])
 const { settings, resetSettings, DEFAULT_SETTINGS } = useSettings()
 
 const activeTab = ref('BAR STAT')
-const tabs = ['BAR STAT']
+const tabs = ['BAR STAT', 'TIME & SALES']
 
 function close() {
   emit('update:modelValue', false)
@@ -98,6 +98,20 @@ function onOverlayClick(e) {
                   }"
                 ></span>
               </label>
+            </div>
+          </template>
+
+          <!-- TIME & SALES tab -->
+          <template v-if="activeTab === 'TIME & SALES'">
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:4px 0; border-bottom:1px solid #1f1f1f;">
+              <span style="color:#aaa; font-size:11px;">Highlight threshold (SOL)</span>
+              <input
+                type="number"
+                v-model.number="settings.timeAndSales.highlightThreshold"
+                min="0"
+                step="0.5"
+                style="width:60px; background:#111; border:1px solid #333; color:#ccc; font-family:monospace; font-size:11px; padding:2px 4px; border-radius:3px;"
+              />
             </div>
           </template>
         </div>

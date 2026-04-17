@@ -1,10 +1,13 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { fmtMcUsd } from '../utils/format.js'
+import { useSettings } from '../composables/useSettings.js'
 
 const props = defineProps({
   trades: { type: Array, required: true },
 })
+
+const { settings } = useSettings()
 
 const minSol = ref(0)
 
@@ -16,6 +19,12 @@ function fmtTime(tsMs) {
   return new Date(tsMs).toLocaleTimeString('en-GB', {
     hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
   })
+}
+
+function rowClass(trade) {
+  const hl = trade.sol >= settings.timeAndSales.highlightThreshold
+  if (hl) return trade.side === 'buy' ? 'ts-buy-hl' : 'ts-sell-hl'
+  return trade.side === 'buy' ? 'ts-buy' : 'ts-sell'
 }
 </script>
 
@@ -31,7 +40,7 @@ function fmtTime(tsMs) {
         v-for="(trade, idx) in filteredTrades"
         :key="idx"
         class="ts-row"
-        :class="trade.side === 'buy' ? 'ts-buy' : 'ts-sell'"
+        :class="rowClass(trade)"
       >
         <span class="ts-col-time">{{ fmtTime(trade.ts) }}</span>
         <span class="ts-col-mc">{{ fmtMcUsd(trade.mc) }}</span>
@@ -74,8 +83,10 @@ function fmtTime(tsMs) {
 }
 .ts-body { overflow-y: auto; flex: 1; }
 .ts-row  { display: flex; padding: 1px 4px; }
-.ts-buy  { color: #4ade80; }
-.ts-sell { color: #f87171; }
+.ts-buy     { color: #4ade80; }
+.ts-sell    { color: #f87171; }
+.ts-buy-hl  { background: #166534; color: #fff; }
+.ts-sell-hl { background: #7f1d1d; color: #fff; }
 .ts-col-time { width: 56px; flex-shrink: 0; }
 .ts-col-mc   { flex: 1; text-align: right; padding-right: 4px; }
 .ts-col-sol  { width: 36px; flex-shrink: 0; text-align: right; }
