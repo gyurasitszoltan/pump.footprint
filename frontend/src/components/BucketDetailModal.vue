@@ -1,9 +1,10 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { Chart, ScatterController, LinearScale, PointElement, Tooltip, Legend } from 'chart.js'
+import zoomPlugin from 'chartjs-plugin-zoom'
 import { fmtSol, fmtMcUsd, fmtMint } from '../utils/format.js'
 
-Chart.register(ScatterController, LinearScale, PointElement, Tooltip, Legend)
+Chart.register(ScatterController, LinearScale, PointElement, Tooltip, Legend, zoomPlugin)
 
 const MC_LEVEL_SIZE = 1000
 
@@ -216,6 +217,17 @@ function renderChart(t, { xMin, xMax, xLabel, xRef }) {
         legend: {
           labels: { color: '#888', font: { size: 10 } },
         },
+        zoom: {
+          zoom: {
+            wheel: { enabled: true },
+            pinch: { enabled: true },
+            mode: 'x',
+          },
+          pan: {
+            enabled: true,
+            mode: 'x',
+          },
+        },
         tooltip: {
           callbacks: {
             label(ctx) {
@@ -360,7 +372,13 @@ const headerText = computed(() => {
         <div v-else-if="error || allTradesError" class="text-red-400 text-center py-8">{{ error || allTradesError }}</div>
         <template v-else>
           <!-- Chart -->
-          <div v-if="activeDisplayTrades.length > 0" style="height:220px;margin-bottom:12px;flex-shrink:0;">
+          <div v-if="activeDisplayTrades.length > 0" style="height:220px;margin-bottom:12px;flex-shrink:0;position:relative;">
+            <button
+              class="absolute top-0 right-0 z-10 text-[9px] font-mono px-1 py-0.5 text-gray-600 hover:text-gray-300 border border-gray-800 hover:border-gray-600 rounded transition-colors"
+              style="background:#111"
+              title="Reset zoom"
+              @click="chartInstance && chartInstance.resetZoom()"
+            >⟳</button>
             <canvas ref="chartCanvas"></canvas>
           </div>
           <div v-else class="text-gray-600 text-center py-4 text-sm">No trades in this view</div>
