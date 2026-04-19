@@ -59,6 +59,33 @@ def read_bucket_trades(mint: str, bucket_idx: int) -> list[dict]:
     return trades
 
 
+def read_all_trades(mint: str) -> list[dict]:
+    """Read all trades for a token from the JSONL file."""
+    path = TRADES_DIR / f"{mint}.jsonl"
+    if not path.exists():
+        return []
+
+    trades = []
+    with open(path, "rb") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                rec = orjson.loads(line)
+                trades.append({
+                    "ts": rec["ts"],
+                    "side": rec["s"],
+                    "sol": rec["sol"],
+                    "mc": rec["mc"],
+                    "wallet": rec["w"],
+                    "bucket": rec["b"],
+                })
+            except Exception:
+                continue
+    return trades
+
+
 def close_token(mint: str):
     """Close file handle for an expired token."""
     fh = _handles.pop(mint, None)

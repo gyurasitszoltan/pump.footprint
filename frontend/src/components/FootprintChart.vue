@@ -13,16 +13,26 @@ let initialScrollDone = false
 const showBucketModal = ref(false)
 const selectedBucket = ref(0)
 const selectedMcLevel = ref(null)
+const multiViewMode = ref(false)
 
 function onBucketClick(bucketIdx) {
   selectedBucket.value = bucketIdx
   selectedMcLevel.value = null
+  multiViewMode.value = false
   showBucketModal.value = true
 }
 
 function onCellClick({ bucket, mcLevel }) {
   selectedBucket.value = bucket
   selectedMcLevel.value = mcLevel
+  multiViewMode.value = false
+  showBucketModal.value = true
+}
+
+function openMultiView() {
+  selectedBucket.value = 0
+  selectedMcLevel.value = null
+  multiViewMode.value = true
   showBucketModal.value = true
 }
 
@@ -46,8 +56,15 @@ watch(() => props.footprint.current_bucket, async () => {
     <div ref="scrollContainer" class="fp-scroll" style="max-height:70vh;">
       <FootprintGrid :footprint="footprint" @bucket-click="onBucketClick" @cell-click="onCellClick" />
     </div>
-    <div class="text-gray-600 text-[9px] px-2 py-1 border-t border-gray-800">
-      Green = buy &gt; sell | Red = sell &gt; buy | Cell: buy_sol | sell_sol | Bucket: 10s x $1,000 MC | SOL=$85
+    <div class="flex items-center justify-between border-t border-gray-800 px-2 py-1">
+      <span class="text-gray-600 text-[9px]">
+        Green = buy &gt; sell | Red = sell &gt; buy | Cell: buy_sol | sell_sol | Bucket: 10s x $1,000 MC | SOL=$85
+      </span>
+      <button
+        class="text-gray-600 hover:text-gray-300 text-[11px] font-mono px-1 py-0.5 border border-gray-800 hover:border-gray-600 rounded transition-colors"
+        title="Full token analysis (600s + per-minute charts)"
+        @click="openMultiView"
+      >⊞ 600s</button>
     </div>
   </div>
   <Teleport to="body">
@@ -56,6 +73,7 @@ watch(() => props.footprint.current_bucket, async () => {
       :mint="footprint.mint"
       :bucket-idx="selectedBucket"
       :mc-level="selectedMcLevel"
+      :multi-view="multiViewMode"
       @close="showBucketModal = false"
     />
   </Teleport>

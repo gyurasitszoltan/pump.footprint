@@ -13,6 +13,15 @@ from . import trade_storage
 FRONTEND_DIST = Path(__file__).parent.parent / "frontend" / "dist"
 
 
+async def handle_all_trades(request: web.Request) -> web.Response:
+    mint = request.match_info["mint"]
+    trades = await asyncio.to_thread(trade_storage.read_all_trades, mint)
+    return web.Response(
+        body=orjson.dumps({"trades": trades, "mint": mint}),
+        content_type="application/json",
+    )
+
+
 async def handle_bucket_trades(request: web.Request) -> web.Response:
     mint = request.match_info["mint"]
     try:
@@ -35,6 +44,7 @@ def create_app(ws_server: WsServer) -> web.Application:
     app["ws_server"] = ws_server
 
     app.router.add_get("/ws", ws_server.handle_ws)
+    app.router.add_get("/api/trades/{mint}/all", handle_all_trades)
     app.router.add_get("/api/trades/{mint}/{bucket}", handle_bucket_trades)
 
     if FRONTEND_DIST.is_dir():
