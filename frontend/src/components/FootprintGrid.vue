@@ -170,6 +170,19 @@ function fmtCvd(bucket) {
   return v ? fmtSolSigned(v) : ''
 }
 
+function fmtVwap(bucket) {
+  const s = getStat(bucket)
+  if (!s.vwap) return ''
+  const ohlc = getOhlc(bucket)
+  const vwapStr = `<span style="color:#aaa">$${(s.vwap / 1000).toFixed(1)}K</span>`
+  if (!ohlc?.c) return vwapStr
+  const pct = Math.round(((ohlc.c - s.vwap) / s.vwap) * 100)
+  if (Math.abs(pct) < 2) return vwapStr
+  const color = pct > 0 ? '#4ade80' : '#f87171'
+  const sign = pct > 0 ? '+' : ''
+  return `${vwapStr}<span style="color:#444">|</span><span style="color:${color}">${sign}${pct}%</span>`
+}
+
 function fmtBuySell(stat) {
   if (stat.vol === 0) return ''
   return `<span style="color:#4ade80">${fmtSol(stat.buy || 0)}</span><span style="color:#666">|</span><span style="color:#f87171">${fmtSol(stat.sell || 0)}</span>`
@@ -239,6 +252,14 @@ const statRows = computed(() => {
     textColor: '#aaa',
     html: true,
   })
+  rows.push({
+    label: 'VWAP',
+    key: '_vwap',
+    format: () => '',
+    bgFn: null,
+    textColor: '#aaa',
+    html: true,
+  })
   return rows
 })
 
@@ -259,6 +280,20 @@ function statBg(row, stat) {
     return deltaBgColor(stat.ema_area || 0, maxAbsEmaArea.value)
   }
   return '#111'
+}
+
+function vwapStatBg(bucket) {
+  const s = getStat(bucket)
+  if (!s.vwap) return '#111'
+  const ohlc = getOhlc(bucket)
+  if (!ohlc?.c) return '#111'
+  const ratio = (ohlc.c - s.vwap) / s.vwap
+  const abs = Math.abs(ratio)
+  if (abs < 0.02) return '#111'
+  const up = ratio > 0
+  if (abs < 0.08) return up ? '#052e16' : '#1c0505'
+  if (abs < 0.20) return up ? '#14532d' : '#450a0a'
+  return up ? '#166534' : '#7f1d1d'
 }
 
 const SCROLLBAR_H = 8  // matches .fp-scroll::-webkit-scrollbar height
@@ -368,7 +403,7 @@ const stickyTopLeft = {
             width: CELL_W + 'px', minWidth: CELL_W + 'px', maxWidth: CELL_W + 'px',
             height: '12px', fontSize: '8px', padding: '0 2px',
             textAlign: 'center', whiteSpace: 'nowrap',
-            background: row.bgFn === 'cvd' ? deltaBgColor(cvdMap[b], maxAbsCvd) : statBg(row, getStat(b)),
+            background: row.key === '_vwap' ? vwapStatBg(b) : row.bgFn === 'cvd' ? deltaBgColor(cvdMap[b], maxAbsCvd) : statBg(row, getStat(b)),
             color: row.textColor,
             borderBottom: '1px solid #111',
             boxShadow: row.key === '_rsi'
@@ -380,7 +415,7 @@ const stickyTopLeft = {
             borderRight: '1px solid #111',
             position: 'sticky', bottom: `${(visibleStatRows.length - 1 - ri) * 12 + SCROLLBAR_H}px`, zIndex: 1,
           }"
-          v-html="row.key === '_cvd' ? fmtCvd(b) : row.format(getStat(b)[row.key], getStat(b))"
+          v-html="row.key === '_vwap' ? fmtVwap(b) : row.key === '_cvd' ? fmtCvd(b) : row.format(getStat(b)[row.key], getStat(b))"
         />
       </tr>
     </tfoot>

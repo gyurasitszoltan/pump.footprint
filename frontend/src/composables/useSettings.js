@@ -19,6 +19,7 @@ const DEFAULT_SETTINGS = {
       'Pool':      true,
       'Size Bins': true,
       'RSI':       true,
+      'VWAP':      true,
     }
   }
 }
