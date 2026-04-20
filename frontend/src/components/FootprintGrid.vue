@@ -174,13 +174,13 @@ function fmtVwap(bucket) {
   const s = getStat(bucket)
   if (!s.vwap) return ''
   const ohlc = getOhlc(bucket)
-  const vwapStr = `<span style="color:#aaa">$${(s.vwap / 1000).toFixed(1)}K</span>`
+  const vwapStr = `<span style="color:#aaa">${(s.vwap / 1000).toFixed(1)}</span>`
   if (!ohlc?.c) return vwapStr
   const pct = Math.round(((ohlc.c - s.vwap) / s.vwap) * 100)
   if (Math.abs(pct) < 2) return vwapStr
   const color = pct > 0 ? '#4ade80' : '#f87171'
   const sign = pct > 0 ? '+' : ''
-  return `${vwapStr}<span style="color:#444">|</span><span style="color:${color}">${sign}${pct}%</span>`
+  return `${vwapStr}<span style="color:#444">|</span><span style="color:${color}">${sign}${pct}</span>`
 }
 
 function fmtBuySell(stat) {
