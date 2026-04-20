@@ -174,9 +174,12 @@ function fmtVwap(bucket) {
   const s = getStat(bucket)
   if (!s.vwap) return ''
   const ohlc = getOhlc(bucket)
-  const vwapStr = `<span style="color:#aaa">${(s.vwap / 1000).toFixed(1)}</span>`
+  const ratio = ohlc?.c ? (ohlc.c - s.vwap) / s.vwap : null
+  const near = ratio !== null && Math.abs(ratio) < 0.01
+  const valColor = near ? '#1a1600' : '#aaa'
+  const vwapStr = `<span style="color:${valColor}">${(s.vwap / 1000).toFixed(1)}</span>`
   if (!ohlc?.c) return vwapStr
-  const pct = Math.round(((ohlc.c - s.vwap) / s.vwap) * 100)
+  const pct = Math.round(ratio * 100)
   if (Math.abs(pct) < 2) return vwapStr
   const color = pct > 0 ? '#4ade80' : '#f87171'
   const sign = pct > 0 ? '+' : ''
@@ -289,7 +292,7 @@ function vwapStatBg(bucket) {
   if (!ohlc?.c) return '#111'
   const ratio = (ohlc.c - s.vwap) / s.vwap
   const abs = Math.abs(ratio)
-  if (abs < 0.01) return '#f6dd00'
+  if (abs < 0.01) return '#b4a200'
   if (abs < 0.02) return '#111'
   const up = ratio > 0
   if (abs < 0.08) return up ? '#052e16' : '#1c0505'
