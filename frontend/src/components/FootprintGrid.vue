@@ -289,7 +289,7 @@ function vwapStatBg(bucket) {
   if (!ohlc?.c) return '#111'
   const ratio = (ohlc.c - s.vwap) / s.vwap
   const abs = Math.abs(ratio)
-  if (abs < 0.01) return '#3d3000'
+  if (abs < 0.01) return '#f6dd00'
   if (abs < 0.02) return '#111'
   const up = ratio > 0
   if (abs < 0.08) return up ? '#052e16' : '#1c0505'
