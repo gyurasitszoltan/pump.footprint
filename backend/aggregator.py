@@ -49,6 +49,10 @@ class Aggregator:
         self._ema21_count: int = 0
         self._ema21_seed:  list[float] = []
 
+        # VWAP state: cumulative from migration
+        self._vwap_num: float = 0.0  # Σ(mc_usd × sol_amount)
+        self._vwap_den: float = 0.0  # Σ(sol_amount)
+
         # Unique wallet tracking
         self.seen_wallets: set[str] = set()
 
@@ -160,6 +164,12 @@ class Aggregator:
                 break
         side = "buy" if tx_type == "buy" else "sell"
         stats.size_bins[bin_idx][side] += sol_amount
+
+        # Update cumulative VWAP
+        self._vwap_num += mc_usd * sol_amount
+        self._vwap_den += sol_amount
+        if self._vwap_den > 0:
+            stats.vwap = self._vwap_num / self._vwap_den
 
         # Update RSI min/max for this 10s bucket
         rsi = self.compute_rsi14()
@@ -399,6 +409,8 @@ class Aggregator:
             "last_mc_usd": self.last_mc_usd,
             "last_trade_bucket": self.last_trade_bucket,
             "seen_wallets": list(self.seen_wallets),
+            "vwap_num": self._vwap_num,
+            "vwap_den": self._vwap_den,
         }
 
     @classmethod
@@ -418,4 +430,6 @@ class Aggregator:
         agg.last_mc_usd = d["last_mc_usd"]
         agg.last_trade_bucket = d["last_trade_bucket"]
         agg.seen_wallets = set(d.get("seen_wallets", []))
+        agg._vwap_num = d.get("vwap_num", 0.0)
+        agg._vwap_den = d.get("vwap_den", 0.0)
         return agg

@@ -87,6 +87,8 @@ class BucketStats:
     vol_exp:  float | None = None
     tps_exp:  float | None = None
     pool_exp: float | None = None
+    # Cumulative VWAP at last trade in this bucket (USD, from migration)
+    vwap: float | None = None
 
     def ensure_bins(self, n: int):
         while len(self.size_bins) < n:
@@ -110,6 +112,7 @@ class BucketStats:
             "vol_exp":     round(self.vol_exp,     3) if self.vol_exp     is not None else None,
             "tps_exp":     round(self.tps_exp,     3) if self.tps_exp     is not None else None,
             "pool_exp":    round(self.pool_exp,    3) if self.pool_exp    is not None else None,
+            "vwap":        round(self.vwap,        1) if self.vwap        is not None else None,
         }
 
     @classmethod
@@ -129,4 +132,5 @@ class BucketStats:
         s.vol_exp     = d.get("vol_exp")
         s.tps_exp     = d.get("tps_exp")
         s.pool_exp    = d.get("pool_exp")
+        s.vwap        = d.get("vwap")
         return s

@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { deltaBgColor, volumeBgColor } from '../utils/colors.js'
-import { fmtSol, fmtSolSigned } from '../utils/format.js'
+import { fmtSol, fmtSolSigned, fmtMcUsd } from '../utils/format.js'
 
 const NUM_BUCKETS = 60
 const CELL_W = 50
@@ -16,6 +16,7 @@ function getStat(bucket) {
   return props.footprint.stats?.[String(bucket)] || {
     vol: 0, delta: 0, trades: 0,
     sol_in_pool: null, vol_exp: null, tps_exp: null, pool_exp: null,
+    vwap: null,
   }
 }
 
@@ -85,7 +86,35 @@ const rows = [
     getRightBg: s => deviationBg(s.sol_in_pool, s.pool_exp),
     bgFn: null,
   },
+  {
+    label: 'VWAP',
+    getLeft:    s => s.vwap ? fmtMcUsd(s.vwap) : '',
+    getRight:   (s, b) => vwapDevPct(b, s.vwap),
+    getRightBg: (s, b) => vwapDevBg(b, s.vwap),
+    bgFn: null,
+  },
 ]
+
+function vwapDevPct(bucket, vwap) {
+  if (!vwap) return ''
+  const closeMc = props.footprint.ohlc?.[String(bucket)]?.c
+  if (!closeMc) return ''
+  const pct = Math.round(((closeMc - vwap) / vwap) * 100)
+  return pct >= 0 ? `+${pct}%` : `${pct}%`
+}
+
+function vwapDevBg(bucket, vwap) {
+  if (!vwap) return null
+  const closeMc = props.footprint.ohlc?.[String(bucket)]?.c
+  if (!closeMc) return null
+  const ratio = (closeMc - vwap) / vwap
+  const abs = Math.abs(ratio)
+  if (abs < 0.02) return null
+  const up = ratio > 0
+  if (abs < 0.08) return up ? '#14532d' : '#450a0a'
+  if (abs < 0.20) return up ? '#166534' : '#7f1d1d'
+  return up ? '#15803d' : '#991b1b'
+}
 
 function rowBg(row, stat) {
   if (row.bgFn === 'volume') return volumeBgColor(stat.vol, maxVol.value)
@@ -119,13 +148,13 @@ function rowBg(row, stat) {
           }"
         >
           <span style="color:#aaa">{{ row.getLeft(getStat(b)) }}</span>
-          <template v-if="row.getRight(getStat(b))">
+          <template v-if="row.getRight(getStat(b), b)">
             <span style="color:#333">|</span>
             <span :style="{
-              color: row.getRightBg(getStat(b)) ? '#fff' : '#555',
-              background: row.getRightBg(getStat(b)) || 'transparent',
+              color: row.getRightBg(getStat(b), b) ? '#fff' : '#555',
+              background: row.getRightBg(getStat(b), b) || 'transparent',
               padding: '0 1px',
-            }">{{ row.getRight(getStat(b)) }}</span>
+            }">{{ row.getRight(getStat(b), b) }}</span>
           </template>
         </td>
       </tr>
